@@ -413,7 +413,7 @@ const DocumentsPage = () => {
   };
 
   return (
-    <div className="p-12">
+    <div className="p-12 bg-brand-eggshell min-h-screen">
       <div className="flex justify-between items-center mb-12">
         <div>
           <h1 className="text-4xl font-black text-brand-black mb-2">Документы</h1>
@@ -434,7 +434,7 @@ const DocumentsPage = () => {
       </div>
 
       <div className="flex flex-wrap items-center gap-4 mb-8">
-        <div className="inline-flex items-center bg-brand-eggshell rounded-2xl p-1 border border-brand-black/5">
+        <div className="inline-flex items-center bg-white rounded-2xl p-1 border border-brand-black/5">
           <button
             type="button"
             onClick={() => switchToPersonal()}
@@ -557,7 +557,7 @@ const DocumentsPage = () => {
       <div className="bg-white rounded-[40px] border border-brand-black/5 shadow-sm overflow-hidden">
         <table className="w-full text-left">
           <thead>
-            <tr className="bg-brand-eggshell border-b border-brand-black/5">
+            <tr className="bg-white border-b border-brand-black/5">
               <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Документ</th>
               <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Тип</th>
               <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Статус</th>
