@@ -16,6 +16,9 @@ import SolutionsPage from './pages/SolutionsPage'
 import PricingPage from './pages/PricingPage'
 import AboutPage from './pages/AboutPage'
 import EmployeesPage from './pages/EmployeesPage'
+import ProfilesPage from './pages/ProfilesPage'
+import CounterpartiesPage from './pages/CounterpartiesPage'
+import AssignmentsPage from './pages/AssignmentsPage'
 import Navbar from './components/Navbar'
 
 // Root Route
@@ -116,6 +119,24 @@ const employeesRoute = createRoute({
   component: EmployeesPage,
 })
 
+const profilesRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: 'profiles',
+  component: ProfilesPage,
+})
+
+const counterpartiesRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: 'counterparties',
+  component: CounterpartiesPage,
+})
+
+const assignmentsRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: 'assignments',
+  component: AssignmentsPage,
+})
+
 // Router instance
 const routeTree = rootRoute.addChildren([
   marketingLayout.addChildren([
@@ -131,7 +152,9 @@ const routeTree = rootRoute.addChildren([
     dashboardIndexRoute,
     organizationsRoute,
     documentsRoute,
-    employeesRoute
+    profilesRoute,
+    counterpartiesRoute,
+    assignmentsRoute
   ])
 ])
 const router = createRouter({ routeTree })

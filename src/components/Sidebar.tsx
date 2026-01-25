@@ -5,13 +5,16 @@ import {
   Users, 
   Settings, 
   LogOut,
-  ChevronRight
+  ChevronRight,
+  ShieldCheck,
+  UserCheck,
+  ClipboardList
 } from 'lucide-react';
 import { useNavigate, Link, useLocation } from '@tanstack/react-router';
 
 interface SidebarProps {
-  activeTab?: 'organizations' | 'documents' | 'employees';
-  setActiveTab?: (tab: 'organizations' | 'documents') => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
 }
 
 const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
@@ -34,13 +37,20 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
         <span className="text-xl font-black tracking-tight text-brand-black">QazDocs</span>
       </Link>
 
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-2 overflow-y-auto no-scrollbar">
         <button 
           onClick={() => navigate({ to: '/dashboard/organizations' })}
           className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${(currentPath === '/dashboard/organizations' || currentPath === '/dashboard') ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:bg-brand-black/5 hover:text-brand-black'}`}
         >
           <Building2 size={20} />
           Organizations
+        </button>
+        <button 
+          onClick={() => navigate({ to: '/dashboard/profiles' })}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${currentPath === '/dashboard/profiles' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:bg-brand-black/5 hover:text-brand-black'}`}
+        >
+          <ShieldCheck size={20} />
+          Our Profiles
         </button>
         <button 
           onClick={() => navigate({ to: '/dashboard/documents' })}
@@ -50,11 +60,18 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
           Documents
         </button>
         <button 
-          onClick={() => navigate({ to: '/dashboard/employees' })}
-          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${currentPath === '/dashboard/employees' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:bg-brand-black/5 hover:text-brand-black'}`}
+          onClick={() => navigate({ to: '/dashboard/assignments' })}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${currentPath === '/dashboard/assignments' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:bg-brand-black/5 hover:text-brand-black'}`}
         >
-          <Users size={20} />
-          Employees
+          <ClipboardList size={20} />
+          Tasks
+        </button>
+        <button 
+          onClick={() => navigate({ to: '/dashboard/counterparties' })}
+          className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${currentPath === '/dashboard/counterparties' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:bg-brand-black/5 hover:text-brand-black'}`}
+        >
+          <UserCheck size={20} />
+          Counterparties
         </button>
       </nav>
 

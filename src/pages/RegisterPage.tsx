@@ -4,6 +4,8 @@ import {
   Mail, 
   Lock, 
   Phone,
+  Scale,
+  User,
   ChevronRight, 
   ArrowLeft,
   Loader2,
@@ -26,9 +28,25 @@ const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('user');
   const [error, setError] = useState('');
   const [isRegistered, setIsRegistered] = useState(false);
   const [verificationCode, setVerificationCode] = useState('');
+
+  const roleOptions = [
+    {
+      id: 'user',
+      title: 'Обычный пользователь',
+      description: 'Работает с документами и подключает организацию.',
+      icon: User,
+    },
+    {
+      id: 'legal',
+      title: 'Свободный юрист',
+      description: 'Проверяет, комментирует и согласует документы.',
+      icon: Scale,
+    },
+  ];
 
   const registerMutation = useMutation({
     mutationFn: authApi.register,
@@ -54,7 +72,7 @@ const RegisterPage = () => {
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    registerMutation.mutate({ email, phone, password });
+    registerMutation.mutate({ email, phone, password, role });
   };
 
   const handleVerify = (e: React.FormEvent) => {
@@ -127,6 +145,56 @@ const RegisterPage = () => {
                 )}
 
                 <form className="space-y-6" onSubmit={handleRegister}>
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Роль</p>
+                    <div role="radiogroup" aria-label="Registration role" className="space-y-3">
+                      {roleOptions.map((option) => {
+                        const isActive = role === option.id;
+                        const Icon = option.icon;
+
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={isActive}
+                            onClick={() => setRole(option.id)}
+                            className={`w-full rounded-2xl border-2 p-4 text-left transition-all ${
+                              isActive
+                                ? 'border-brand-aquamarine bg-white shadow-xl shadow-brand-aquamarine/10'
+                                : 'border-brand-black/10 bg-white/50 hover:border-brand-black/20 hover:bg-white'
+                            }`}
+                          >
+                            <div className="flex items-start gap-4">
+                              <div
+                                className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-colors ${
+                                  isActive
+                                    ? 'bg-brand-aquamarine text-brand-black'
+                                    : 'bg-brand-black/5 text-brand-black/60'
+                                }`}
+                              >
+                                <Icon size={22} />
+                              </div>
+                              <div className="flex-1 space-y-1">
+                                <div className="flex items-center justify-between gap-3">
+                                  <span className="text-base font-black text-brand-black">{option.title}</span>
+                                  <span
+                                    className={`text-[10px] font-black uppercase tracking-[0.2em] ${
+                                      isActive ? 'text-brand-black' : 'text-brand-black/40'
+                                    }`}
+                                  >
+                                    {isActive ? 'Выбрано' : 'Выбрать'}
+                                  </span>
+                                </div>
+                                <p className="text-sm font-medium text-brand-black/50">{option.description}</p>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Email Address</label>
                     <div className="relative group">
