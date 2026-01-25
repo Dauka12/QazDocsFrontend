@@ -53,21 +53,30 @@ jobs:
           script: |
             set -e
             
+            # Navigate to deployment directory (matching backend setup)
+            mkdir -p /opt/qazcode
+            cd /opt/qazcode
+
             # Login to GHCR on server
             echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.GHCR_USER }}" --password-stdin
             
-            # Pull the latest image
-            docker pull ghcr.io/${{ steps.repo.outputs.NAME }}:latest
-            
-            # Stop and remove existing container if it exists
-            docker stop qazdocs-frontend || true
-            docker rm qazdocs-frontend || true
-            
-            # Run the new container
-            # Using port 3000 to avoid conflict with potential other services on port 80
-            docker run -d \
-              --name qazdocs-frontend \
-              --restart unless-stopped \
-              -p 3000:80 \
-              --network qazcode_network \
-              ghcr.io/${{ steps.repo.outputs.NAME }}:latest
+            # Create a localized docker-compose file on the server for the frontend
+            cat <<EOF > docker-compose.frontend.yml
+            services:
+              frontend:
+                image: ghcr.io/${{ steps.repo.outputs.NAME }}:latest
+                container_name: qazdocs-frontend
+                ports:
+                  - "3000:80"
+                restart: unless-stopped
+                networks:
+                  - qazcode_network
+
+            networks:
+              qazcode_network:
+                external: true
+            EOF
+
+            # Pull and restart using the separate compose file to avoid conflict with backend's main compose
+            docker compose -f docker-compose.frontend.yml pull
+            docker compose -f docker-compose.frontend.yml up -d --remove-orphans
