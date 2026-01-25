@@ -46,8 +46,8 @@ const AssignmentsPage = () => {
     <div className="p-12">
       <div className="flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-4xl font-black text-brand-black mb-2">Tasks & Assignments</h1>
-          <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Action items requiring your attention</p>
+          <h1 className="text-4xl font-black text-brand-black mb-2">Задачи и поручения</h1>
+          <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Действия, требующие вашего внимания</p>
         </div>
       </div>
 
@@ -76,10 +76,10 @@ const AssignmentsPage = () => {
                     
                     <div className="flex items-center gap-6">
                       <div className="flex items-center gap-2 text-xs font-black text-brand-black/40">
-                        <Calendar size={14} /> Due: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No deadline'}
+                        <Calendar size={14} /> Срок: {task.due_date ? new Date(task.due_date).toLocaleDateString() : 'Без срока'}
                       </div>
                       <div className="flex items-center gap-2 text-xs font-black text-brand-black/40">
-                        <User size={14} /> From: System
+                        <User size={14} /> От: Система
                       </div>
                     </div>
                   </div>
@@ -92,7 +92,7 @@ const AssignmentsPage = () => {
                         onClick={() => setSelectedTask(task)}
                         className="bg-brand-black text-white px-6 py-3 rounded-xl font-black text-sm hover:brightness-125 transition-all shadow-lg"
                       >
-                        Handle Task
+                        Выполнить
                       </button>
                     </>
                   )}
@@ -106,7 +106,7 @@ const AssignmentsPage = () => {
         ) : (
           <div className="text-center py-20 bg-brand-eggshell/50 rounded-[40px] border-2 border-dashed border-brand-black/5">
             <CheckCircle size={48} className="mx-auto text-brand-black/10 mb-4" />
-            <p className="text-brand-black/40 font-bold">You're all caught up! No pending tasks.</p>
+            <p className="text-brand-black/40 font-bold">Все выполнено! Нет активных задач.</p>
           </div>
         )}
       </div>
@@ -128,7 +128,7 @@ const AssignmentsPage = () => {
               </button>
 
               <h2 className="text-3xl font-black text-brand-black mb-2">{selectedTask.action_required}</h2>
-              <p className="text-brand-black/40 font-medium mb-8">Process this task and provide your response.</p>
+              <p className="text-brand-black/40 font-medium mb-8">Обработайте поручение и оставьте комментарий.</p>
 
               <div className="space-y-6">
                 <div className="p-4 bg-brand-eggshell/50 rounded-2xl border border-brand-black/5">
@@ -136,11 +136,11 @@ const AssignmentsPage = () => {
                 </div>
 
                 <div className="space-y-4">
-                  <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Your Response / Comments</h4>
+                  <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Ответ / комментарий</h4>
                   <textarea 
                     value={response}
                     onChange={e => setResponse(e.target.value)}
-                    placeholder="Describe what has been done..."
+                    placeholder="Опишите, что было сделано..."
                     className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold min-h-[120px]"
                   />
                 </div>
@@ -150,13 +150,13 @@ const AssignmentsPage = () => {
                     onClick={() => rejectMutation.mutate({id: selectedTask.id, data: {reason: response}})}
                     className="flex-1 bg-red-50 text-red-500 py-4 rounded-2xl font-black hover:bg-red-100 transition-all flex items-center justify-center gap-2"
                   >
-                    <XCircle size={20} /> Reject
+                    <XCircle size={20} /> Отклонить
                   </button>
                   <button 
                     onClick={() => completeMutation.mutate({id: selectedTask.id, data: {response: response}})}
                     className="flex-1 bg-brand-aquamarine text-brand-black py-4 rounded-2xl font-black hover:shadow-lg transition-all flex items-center justify-center gap-2"
                   >
-                    <CheckCircle size={20} /> Complete
+                    <CheckCircle size={20} /> Завершить
                   </button>
                 </div>
               </div>

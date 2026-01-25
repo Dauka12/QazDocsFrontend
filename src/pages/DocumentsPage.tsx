@@ -276,7 +276,7 @@ const DocumentsPage = () => {
       data: {
         to_user_id: userId,
         action: 'SIGN',
-        message: shareMessage || 'Please sign this document with EDS.',
+        message: shareMessage || 'Пожалуйста, подпишите документ с помощью ЭЦП.',
       }
     });
   };
@@ -284,11 +284,11 @@ const DocumentsPage = () => {
   const handleCreateDoc = (e: React.FormEvent) => {
     e.preventDefault();
     if (wizardData.params.counterparty_bin.length !== 12) {
-      setValidationError('BIN must be exactly 12 digits');
+      setValidationError('БИН должен состоять из 12 цифр');
       return;
     }
     if (!wizardData.params.deadline) {
-      setValidationError('Please select a deadline');
+      setValidationError('Выберите срок исполнения');
       return;
     }
     setValidationError(null);
@@ -301,15 +301,15 @@ const DocumentsPage = () => {
     <div className="p-12">
       <div className="flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-4xl font-black text-brand-black mb-2">All Documents</h1>
-          <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Manage your intelligent legal workspace.</p>
+          <h1 className="text-4xl font-black text-brand-black mb-2">Все документы</h1>
+          <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Управляйте интеллектуальным юридическим пространством.</p>
         </div>
         <button 
           onClick={() => setIsGenerateDocOpen(true)}
           className="bg-brand-aquamarine text-brand-black px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 shadow-sm"
         >
           <Plus size={20} />
-          Generate Document
+          Создать документ
         </button>
       </div>
 
@@ -317,7 +317,7 @@ const DocumentsPage = () => {
         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={24} />
         <input 
           type="text" 
-          placeholder="Search documents..."
+          placeholder="Поиск документов..."
           className="w-full bg-white border border-brand-black/5 rounded-[24px] py-6 pl-16 pr-8 focus:outline-none focus:ring-4 focus:ring-brand-aquamarine/10 focus:border-brand-aquamarine/50 transition-all font-bold text-lg"
         />
       </div>
@@ -326,10 +326,10 @@ const DocumentsPage = () => {
         <table className="w-full text-left">
           <thead>
             <tr className="bg-brand-eggshell border-b border-brand-black/5">
-              <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Document Name</th>
-              <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Type</th>
-              <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Status</th>
-              <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Date</th>
+              <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Документ</th>
+              <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Тип</th>
+              <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Статус</th>
+              <th className="px-8 py-4 text-xs font-black uppercase tracking-widest text-brand-black/40">Дата</th>
               <th className="px-8 py-4"></th>
             </tr>
           </thead>
@@ -344,10 +344,10 @@ const DocumentsPage = () => {
                       <div className="w-10 h-10 bg-brand-aquamarine/20 rounded-xl flex items-center justify-center">
                         <FileText className="text-brand-aquamarine" size={20} />
                       </div>
-                      <span className="font-bold text-brand-black">{doc.name || 'Service Agreement'}</span>
+                      <span className="font-bold text-brand-black">{doc.name || 'Договор оказания услуг'}</span>
                     </div>
                   </td>
-                  <td className="px-8 py-6 text-sm font-medium text-brand-black/60">{doc.type || 'Legal'}</td>
+                  <td className="px-8 py-6 text-sm font-medium text-brand-black/60">{doc.type || 'Юридический'}</td>
                   <td className="px-8 py-6">
                     <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
                       doc.status === 'APPROVED' ? 'bg-green-100 text-green-600' : 
@@ -365,7 +365,7 @@ const DocumentsPage = () => {
                       <button 
                         onClick={() => setShareDoc(doc)}
                         className="p-2 hover:bg-brand-black/5 text-brand-black/40 hover:text-brand-black rounded-lg transition-all"
-                        title="Send for signing"
+                        title="Отправить на подпись"
                       >
                         <Send size={20} />
                       </button>
@@ -373,7 +373,7 @@ const DocumentsPage = () => {
                         <button 
                           onClick={() => approveMutation.mutate(doc.id)}
                           className="p-2 hover:bg-brand-aquamarine/20 text-brand-aquamarine rounded-lg transition-all"
-                          title="Approve"
+                          title="Утвердить"
                         >
                           <CheckCircle size={20} />
                         </button>
@@ -383,14 +383,14 @@ const DocumentsPage = () => {
                           <button 
                             onClick={() => handleExport(doc.id, 'pdf')}
                             className="p-2 hover:bg-brand-black/5 text-brand-black/40 hover:text-red-500 rounded-lg transition-all"
-                            title="Export PDF"
+                            title="Экспорт PDF"
                           >
                             <FileDown size={20} />
                           </button>
                           <button 
                             onClick={() => handleExport(doc.id, 'docx')}
                             className="p-2 hover:bg-brand-black/5 text-brand-black/40 hover:text-blue-500 rounded-lg transition-all"
-                            title="Export DOCX"
+                            title="Экспорт DOCX"
                           >
                             <Download size={20} />
                           </button>
@@ -407,7 +407,7 @@ const DocumentsPage = () => {
               <tr>
                 <td colSpan={5} className="px-8 py-20 text-center">
                   <FileText size={48} className="mx-auto text-brand-black/10 mb-4" />
-                  <p className="text-brand-black/40 font-bold">No documents generated yet.</p>
+                  <p className="text-brand-black/40 font-bold">Документы еще не созданы.</p>
                 </td>
               </tr>
             )}
@@ -464,10 +464,10 @@ const DocumentsPage = () => {
               </button>
 
               <h2 className="text-3xl font-black text-brand-black mb-2">
-                {step === 1 ? 'Choose Template' : step === 2 ? 'Document Details' : 'Preview Document'}
+                {step === 1 ? 'Выберите шаблон' : step === 2 ? 'Параметры документа' : 'Предпросмотр документа'}
               </h2>
               <p className="text-brand-black/40 font-medium mb-8">
-                {step === 1 ? 'Select the base for your document.' : step === 2 ? 'AI needs some context to generate a precise legal document.' : 'Review your AI-generated legal document before saving.'}
+                {step === 1 ? 'Выберите основу для документа.' : step === 2 ? 'ИИ нужен контекст для точного юридического текста.' : 'Проверьте документ перед сохранением.'}
               </p>
 
               {/* Progress Indicator */}
@@ -508,20 +508,20 @@ const DocumentsPage = () => {
                     <div className="space-y-8">
                       {/* Executor (Us) */}
                       <div className="space-y-4">
-                        <div className="flex items-center justify-between gap-2 text-brand-aquamarine">
-                          <div className="flex items-center gap-2">
-                            <ShieldCheck size={18} />
-                            <h4 className="text-xs font-black uppercase tracking-widest">Our Details (Executor)</h4>
-                          </div>
-                          {profiles?.length > 0 && (
-                            <select 
+                      <div className="flex items-center justify-between gap-2 text-brand-aquamarine">
+                        <div className="flex items-center gap-2">
+                          <ShieldCheck size={18} />
+                          <h4 className="text-xs font-black uppercase tracking-widest">Наши реквизиты (исполнитель)</h4>
+                        </div>
+                        {profiles?.length > 0 && (
+                          <select 
                               onChange={(e) => {
                                 const p = profiles.find((pr: any) => pr.id === parseInt(e.target.value));
                                 if (p) applyProfile(p);
                               }}
                               className="text-[10px] font-black uppercase bg-brand-aquamarine/10 border-none rounded-lg px-2 py-1 outline-none"
                             >
-                              <option value="">Quick Fill</option>
+                              <option value="">Заполнить</option>
                               {profiles.map((p: any) => (
                                 <option key={p.id} value={p.id}>{p.name}</option>
                               ))}
@@ -531,7 +531,7 @@ const DocumentsPage = () => {
                         <div className="grid grid-cols-1 gap-3">
                           <input 
                             type="text" 
-                            placeholder="Company Name"
+                            placeholder="Название компании"
                             value={wizardData.params.org_name}
                             onChange={e => setWizardData({...wizardData, params: {...wizardData.params, org_name: e.target.value}})}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
@@ -539,7 +539,7 @@ const DocumentsPage = () => {
                           />
                           <input 
                             type="text" 
-                            placeholder="BIN"
+                            placeholder="БИН"
                             value={formatBIN(wizardData.params.org_bin)}
                             onChange={e => {
                               const raw = e.target.value.replace(/\D/g, '').slice(0, 12);
@@ -551,7 +551,7 @@ const DocumentsPage = () => {
                           <div className="grid grid-cols-2 gap-3">
                             <input 
                               type="text" 
-                              placeholder="Signer Name"
+                              placeholder="ФИО подписанта"
                               value={wizardData.params.org_signer_name}
                               onChange={e => setWizardData({...wizardData, params: {...wizardData.params, org_signer_name: e.target.value}})}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
@@ -559,7 +559,7 @@ const DocumentsPage = () => {
                             />
                             <input 
                               type="text" 
-                              placeholder="Basis (e.g. Charter)"
+                              placeholder="Основание (например, Устав)"
                               value={wizardData.params.org_signer_basis}
                               onChange={e => setWizardData({...wizardData, params: {...wizardData.params, org_signer_basis: e.target.value}})}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
@@ -574,7 +574,7 @@ const DocumentsPage = () => {
                         <div className="flex items-center justify-between gap-2 text-brand-black/40">
                           <div className="flex items-center gap-2">
                             <Building size={18} />
-                            <h4 className="text-xs font-black uppercase tracking-widest">Counterparty (Customer)</h4>
+                            <h4 className="text-xs font-black uppercase tracking-widest">Контрагент (заказчик)</h4>
                           </div>
                           {counterparties?.length > 0 && (
                             <select 
@@ -584,7 +584,7 @@ const DocumentsPage = () => {
                               }}
                               className="text-[10px] font-black uppercase bg-brand-black/5 border-none rounded-lg px-2 py-1 outline-none"
                             >
-                              <option value="">Quick Fill</option>
+                              <option value="">Заполнить</option>
                               {counterparties.map((cp: any) => (
                                 <option key={cp.id} value={cp.id}>{cp.name}</option>
                               ))}
@@ -594,7 +594,7 @@ const DocumentsPage = () => {
                         <div className="grid grid-cols-1 gap-3">
                           <input 
                             type="text" 
-                            placeholder="Company Name"
+                            placeholder="Название компании"
                             value={wizardData.params.counterparty_name}
                             onChange={e => setWizardData({...wizardData, params: {...wizardData.params, counterparty_name: e.target.value}})}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
@@ -603,7 +603,7 @@ const DocumentsPage = () => {
                           <div className="relative">
                             <input 
                               type="text" 
-                              placeholder="BIN (12 digits)"
+                              placeholder="БИН (12 цифр)"
                               value={formatBIN(wizardData.params.counterparty_bin)}
                               onChange={e => {
                                 const raw = e.target.value.replace(/\D/g, '').slice(0, 12);
@@ -621,7 +621,7 @@ const DocumentsPage = () => {
                           <div className="grid grid-cols-2 gap-3">
                             <input 
                               type="text" 
-                              placeholder="Signer Name"
+                              placeholder="ФИО подписанта"
                               value={wizardData.params.counterparty_signer_name}
                               onChange={e => setWizardData({...wizardData, params: {...wizardData.params, counterparty_signer_name: e.target.value}})}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
@@ -629,7 +629,7 @@ const DocumentsPage = () => {
                             />
                             <input 
                               type="text" 
-                              placeholder="Basis (e.g. Charter)"
+                              placeholder="Основание (например, Устав)"
                               value={wizardData.params.counterparty_signer_basis}
                               onChange={e => setWizardData({...wizardData, params: {...wizardData.params, counterparty_signer_basis: e.target.value}})}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
@@ -646,12 +646,12 @@ const DocumentsPage = () => {
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-brand-black/40">
                           <MapPin size={18} />
-                          <h4 className="text-xs font-black uppercase tracking-widest">Place & Date</h4>
+                          <h4 className="text-xs font-black uppercase tracking-widest">Место и дата</h4>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <input 
                             type="text" 
-                            placeholder="Place (e.g. Almaty)"
+                            placeholder="Место (например, Алматы)"
                             value={wizardData.params.contract_place}
                             onChange={e => setWizardData({...wizardData, params: {...wizardData.params, contract_place: e.target.value}})}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
@@ -671,7 +671,7 @@ const DocumentsPage = () => {
                       <div className="space-y-4">
                         <div className="flex items-center gap-2 text-brand-black/40">
                           <FileText size={18} />
-                          <h4 className="text-xs font-black uppercase tracking-widest">Deal Details</h4>
+                          <h4 className="text-xs font-black uppercase tracking-widest">Условия сделки</h4>
                         </div>
                         <div className="space-y-3">
                           <div className="space-y-2">
@@ -695,7 +695,7 @@ const DocumentsPage = () => {
                             <div className="relative">
                               <input 
                                 type="text" 
-                                placeholder={`Price (${selectedCurrency.symbol})`}
+                                placeholder={`Цена (${selectedCurrency.symbol})`}
                                 value={formatPrice(wizardData.params.price)}
                                 onChange={e => {
                                   const raw = e.target.value.replace(/\D/g, '');
@@ -715,7 +715,7 @@ const DocumentsPage = () => {
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-left flex justify-between items-center"
                             >
                               <span className={wizardData.params.deadline ? 'text-brand-black' : 'text-brand-black/40'}>
-                                {wizardData.params.deadline ? format(new Date(wizardData.params.deadline), 'PPP') : 'Select Deadline'}
+                                {wizardData.params.deadline ? format(new Date(wizardData.params.deadline), 'PPP') : 'Выберите срок'}
                               </span>
                               <Calendar className="text-brand-black/20" size={18} />
                             </button>
@@ -744,7 +744,7 @@ const DocumentsPage = () => {
                           </div>
 
                           <textarea 
-                            placeholder="Services Description (e.g. Sale of car wheels)"
+                            placeholder="Описание услуг (например, продажа автомобильных дисков)"
                             value={wizardData.params.services}
                             onChange={e => setWizardData({...wizardData, params: {...wizardData.params, services: e.target.value}})}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold min-h-[80px]"
@@ -760,7 +760,7 @@ const DocumentsPage = () => {
                   )}
 
                   <div className="space-y-4">
-                    <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Contract Strictness</h4>
+                    <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Жесткость договора</h4>
                     <div className="flex gap-4">
                       {['SOFT', 'STANDARD', 'STRICT'].map((s) => (
                         <button
@@ -769,7 +769,7 @@ const DocumentsPage = () => {
                           onClick={() => setWizardData({...wizardData, strictness: s as any})}
                           className={`flex-1 py-3 rounded-xl font-black transition-all ${wizardData.strictness === s ? 'bg-brand-black text-white shadow-lg scale-105' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'}`}
                         >
-                          {s}
+                          {s === 'SOFT' ? 'Мягкий' : s === 'STANDARD' ? 'Стандартный' : 'Жесткий'}
                         </button>
                       ))}
                     </div>
@@ -781,14 +781,14 @@ const DocumentsPage = () => {
                       onClick={() => setStep(1)}
                       className="flex-1 bg-brand-eggshell text-brand-black py-4 rounded-2xl font-black hover:bg-brand-black/5 transition-all"
                     >
-                      Back
+                      Назад
                     </button>
                     <button 
                       type="submit"
                       disabled={generateMutation.isPending}
                       className="flex-[2] bg-brand-black text-brand-eggshell py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
                     >
-                      {generateMutation.isPending ? <Loader2 className="animate-spin" /> : 'Generate with AI'}
+                      {generateMutation.isPending ? <Loader2 className="animate-spin" /> : 'Сгенерировать с ИИ'}
                     </button>
                   </div>
                 </form>
@@ -805,7 +805,7 @@ const DocumentsPage = () => {
                           previewMode === 'edit' ? 'bg-brand-black text-white shadow-lg' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'
                         }`}
                       >
-                        <PencilLine size={14} /> Edit
+                        <PencilLine size={14} /> Редактирование
                       </button>
                       <button
                         type="button"
@@ -814,11 +814,11 @@ const DocumentsPage = () => {
                           previewMode === 'preview' ? 'bg-brand-black text-white shadow-lg' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'
                         }`}
                       >
-                        <Eye size={14} /> Preview
+                        <Eye size={14} /> Просмотр
                       </button>
                     </div>
                     {updateMutation.isPending && (
-                      <span className="text-xs font-black uppercase tracking-widest text-brand-black/40">Saving changes...</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-brand-black/40">Сохранение изменений...</span>
                     )}
                   </div>
 
@@ -834,26 +834,26 @@ const DocumentsPage = () => {
                                   value={s.title || ''}
                                   onChange={(e) => updateSection(i, 'title', e.target.value)}
                                   className="w-full bg-white/80 border-2 border-transparent rounded-xl py-2 px-3 focus:border-brand-aquamarine focus:outline-none transition-all font-black text-brand-black"
-                                  placeholder="Section title"
+                                  placeholder="Заголовок раздела"
                                 />
-                                <span className="text-[10px] font-black uppercase tracking-widest text-brand-black/40">#{i + 1}</span>
+                                <span className="text-[10px] font-black uppercase tracking-widest text-brand-black/40">№{i + 1}</span>
                               </div>
                               <textarea
                                 value={s.text || ''}
                                 onChange={(e) => updateSection(i, 'text', e.target.value)}
                                 className="w-full bg-white/80 border-2 border-transparent rounded-xl py-3 px-3 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm text-brand-black/80 min-h-[140px]"
-                                placeholder="Section text"
+                                placeholder="Текст раздела"
                               />
                               {s.citations?.length > 0 && (
                                 <div className="text-[10px] font-black uppercase tracking-widest text-brand-black/40">
-                                  Citations: {s.citations.join(', ')}
+                                  Ссылки: {s.citations.join(', ')}
                                 </div>
                               )}
                             </div>
                           ))
                         ) : (
                           <div className="p-6 bg-brand-eggshell/60 rounded-2xl text-sm font-bold text-brand-black/40 text-center">
-                            No sections generated yet.
+                            Разделы пока не сформированы.
                           </div>
                         )
                       ) : (
@@ -877,7 +877,7 @@ const DocumentsPage = () => {
                           ))
                         ) : (
                           <div className="p-6 bg-brand-eggshell/60 rounded-2xl text-sm font-bold text-brand-black/40 text-center">
-                            No sections generated yet.
+                            Разделы пока не сформированы.
                           </div>
                         )
                       )}
@@ -885,14 +885,14 @@ const DocumentsPage = () => {
 
                     <div className="space-y-4">
                       <div className="p-4 bg-brand-eggshell/50 rounded-2xl border border-brand-black/5">
-                        <h5 className="text-[10px] font-black uppercase tracking-widest text-brand-black/40 mb-2">Document Meta</h5>
-                        <div className="text-xs font-bold text-brand-black/60">Document ID: {generationResult.id}</div>
-                        <div className="text-xs font-bold text-brand-black/60">Status: {generationResult.status}</div>
+                        <h5 className="text-[10px] font-black uppercase tracking-widest text-brand-black/40 mb-2">Данные документа</h5>
+                        <div className="text-xs font-bold text-brand-black/60">ID документа: {generationResult.id}</div>
+                        <div className="text-xs font-bold text-brand-black/60">Статус: {generationResult.status}</div>
                       </div>
 
                       {displayContent.open_questions?.length > 0 && (
                         <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                          <h5 className="text-xs font-black uppercase text-blue-500 mb-2">Missing Information</h5>
+                          <h5 className="text-xs font-black uppercase text-blue-500 mb-2">Недостающая информация</h5>
                           <ul className="space-y-1">
                             {displayContent.open_questions.map((q: any, i: number) => (
                               <li key={i} className="text-xs font-bold text-blue-600/80 flex items-start gap-2">
@@ -905,7 +905,7 @@ const DocumentsPage = () => {
                       
                       {displayContent.risk_flags?.length > 0 && (
                         <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
-                          <h5 className="text-xs font-black uppercase text-red-500 mb-2">AI Risk Analysis</h5>
+                          <h5 className="text-xs font-black uppercase text-red-500 mb-2">Риски ИИ</h5>
                           <ul className="space-y-1">
                             {displayContent.risk_flags.map((r: any, i: number) => (
                               <li key={i} className="text-xs font-bold text-red-600/80 flex items-start gap-2">
@@ -924,7 +924,7 @@ const DocumentsPage = () => {
                       disabled={updateMutation.isPending}
                       className="flex-1 bg-brand-eggshell text-brand-black py-4 rounded-2xl font-black hover:bg-brand-black/5 transition-all disabled:opacity-60"
                     >
-                      Save as Draft
+                      Сохранить как черновик
                     </button>
                     <button 
                       onClick={handleApprove}
@@ -934,7 +934,7 @@ const DocumentsPage = () => {
                       {approveMutation.isPending ? <Loader2 className="animate-spin" /> : (
                         <>
                           <CheckCircle size={20} />
-                          Approve and Save
+                          Утвердить и сохранить
                         </>
                       )}
                     </button>
@@ -967,35 +967,35 @@ const DocumentsPage = () => {
                 <Plus size={32} className="rotate-45" />
               </button>
 
-              <h2 className="text-3xl font-black text-brand-black mb-2">Send for Signing</h2>
-              <p className="text-brand-black/40 font-medium mb-8">Invite a teammate or share a signing link.</p>
+              <h2 className="text-3xl font-black text-brand-black mb-2">Отправить на подпись</h2>
+              <p className="text-brand-black/40 font-medium mb-8">Пригласите пользователя или отправьте ссылку на подпись.</p>
 
               <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-brand-black/40">
                     <UserPlus size={18} />
-                    <h4 className="text-xs font-black uppercase tracking-widest">Send to User</h4>
+                    <h4 className="text-xs font-black uppercase tracking-widest">Отправить пользователю</h4>
                   </div>
 
                   <input
                     type="text"
                     value={shareSearch}
                     onChange={(e) => setShareSearch(e.target.value)}
-                    placeholder="Search by email or phone"
+                    placeholder="Поиск по email или телефону"
                     className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                   />
 
                   <textarea
                     value={shareMessage}
                     onChange={(e) => setShareMessage(e.target.value)}
-                    placeholder="Message to signer (optional)"
+                    placeholder="Сообщение подписанту (необязательно)"
                     className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold min-h-[100px]"
                   />
 
                   <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2">
                     {isSearchingUsers && (
                       <div className="flex items-center gap-2 text-xs font-bold text-brand-black/40">
-                        <Loader2 size={14} className="animate-spin" /> Searching...
+                        <Loader2 size={14} className="animate-spin" /> Поиск...
                       </div>
                     )}
                     {Array.isArray(userResults) && userResults.length > 0 && userResults.map((user: any) => {
@@ -1013,13 +1013,13 @@ const DocumentsPage = () => {
                             disabled={assignMutation.isPending}
                             className="bg-brand-black text-brand-eggshell px-3 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:brightness-125 transition-all disabled:opacity-50"
                           >
-                            Send
+                            Отправить
                           </button>
                         </div>
                       );
                     })}
                     {debouncedShareSearch.length > 2 && !isSearchingUsers && (!userResults || userResults.length === 0) && (
-                      <div className="text-xs font-bold text-brand-black/40">No users found.</div>
+                      <div className="text-xs font-bold text-brand-black/40">Пользователи не найдены.</div>
                     )}
                   </div>
                 </div>
@@ -1027,11 +1027,11 @@ const DocumentsPage = () => {
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-brand-black/40">
                     <Link2 size={18} />
-                    <h4 className="text-xs font-black uppercase tracking-widest">Share Link</h4>
+                    <h4 className="text-xs font-black uppercase tracking-widest">Ссылка</h4>
                   </div>
 
                   <div className="p-4 bg-brand-eggshell/60 rounded-2xl border border-brand-black/5 space-y-3">
-                    <div className="text-xs font-bold text-brand-black/70 break-all">{shareLink || 'Link unavailable yet.'}</div>
+                    <div className="text-xs font-bold text-brand-black/70 break-all">{shareLink || 'Ссылка пока недоступна.'}</div>
                     <button
                       type="button"
                       onClick={handleCopyLink}
@@ -1039,13 +1039,13 @@ const DocumentsPage = () => {
                       className="w-full bg-brand-aquamarine text-brand-black py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:shadow-lg transition-all disabled:opacity-50"
                     >
                       <Copy size={14} />
-                      {linkCopied ? 'Copied' : 'Copy Link'}
+                      {linkCopied ? 'Скопировано' : 'Скопировать ссылку'}
                     </button>
                   </div>
 
                   <div className="p-4 bg-brand-aquamarine/10 rounded-2xl border border-brand-aquamarine/30">
                     <div className="text-xs font-bold text-brand-black/60">
-                      This link opens the public verification page used by QR codes in exports.
+                      Эта ссылка открывает публичную проверку, которую использует QR в экспортах.
                     </div>
                   </div>
                 </div>

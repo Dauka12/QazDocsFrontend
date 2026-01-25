@@ -21,6 +21,7 @@ import CounterpartiesPage from './pages/CounterpartiesPage'
 import AssignmentsPage from './pages/AssignmentsPage'
 import PublicDocumentPage from './pages/PublicDocumentPage'
 import LawyerRequestsPage from './pages/LawyerRequestsPage'
+import MyOrganizationPage from './pages/MyOrganizationPage'
 import Navbar from './components/Navbar'
 
 // Root Route
@@ -151,6 +152,12 @@ const lawyerRequestsRoute = createRoute({
   component: LawyerRequestsPage,
 })
 
+const myOrganizationRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: 'my-organization',
+  component: MyOrganizationPage,
+})
+
 // Router instance
 const routeTree = rootRoute.addChildren([
   marketingLayout.addChildren([
@@ -170,7 +177,8 @@ const routeTree = rootRoute.addChildren([
     profilesRoute,
     counterpartiesRoute,
     assignmentsRoute,
-    lawyerRequestsRoute
+    lawyerRequestsRoute,
+    myOrganizationRoute
   ])
 ])
 const router = createRouter({ routeTree })

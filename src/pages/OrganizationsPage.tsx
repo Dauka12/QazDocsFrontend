@@ -68,15 +68,15 @@ const OrganizationsPage = () => {
     <div className="p-12">
       <div className="flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-4xl font-black text-brand-black mb-2">Welcome back!</h1>
-          <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Your Organizations</p>
+          <h1 className="text-4xl font-black text-brand-black mb-2">С возвращением!</h1>
+          <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Ваши организации</p>
         </div>
         <button 
           onClick={() => setIsCreateOrgOpen(true)}
           className="bg-brand-black text-brand-eggshell px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95"
         >
           <Plus size={20} />
-          Create Organization
+          Создать организацию
         </button>
       </div>
 
@@ -100,14 +100,14 @@ const OrganizationsPage = () => {
                 <span>{org.type}</span>
               </div>
               <button className="w-full flex items-center justify-between p-4 bg-brand-eggshell rounded-2xl font-black hover:bg-brand-black hover:text-brand-eggshell transition-all">
-                Open Workspace <ChevronRight size={18} />
+                Открыть рабочее пространство <ChevronRight size={18} />
               </button>
             </motion.div>
           ))
         ) : (
           <div className="col-span-full py-20 text-center space-y-4 bg-white rounded-[40px] border-2 border-dashed border-brand-black/5">
             <Building2 size={48} className="mx-auto text-brand-black/10" />
-            <p className="text-brand-black/40 font-bold">No organizations found. Create your first one!</p>
+            <p className="text-brand-black/40 font-bold">Организаций нет. Создайте первую!</p>
           </div>
         )}
       </div>
@@ -129,24 +129,24 @@ const OrganizationsPage = () => {
                 <Plus size={32} className="rotate-45" />
               </button>
 
-              <h2 className="text-3xl font-black text-brand-black mb-2">New Organization</h2>
-              <p className="text-brand-black/40 font-medium mb-8">Register your legal entity to start.</p>
+              <h2 className="text-3xl font-black text-brand-black mb-2">Новая организация</h2>
+              <p className="text-brand-black/40 font-medium mb-8">Зарегистрируйте юридическое лицо.</p>
 
               <form onSubmit={handleCreateOrg} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Full Legal Name</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Полное название</label>
                   <input 
                     type="text" 
                     value={newOrg.name}
                     onChange={(e) => setNewOrg({ ...newOrg, name: e.target.value })}
-                    placeholder="LLP QazDocs"
+                    placeholder="ТОО QazDocs"
                     className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-4 px-6 focus:border-brand-aquamarine focus:bg-white focus:outline-none transition-all"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Business ID (BIN)</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">БИН</label>
                   <input 
                     type="text" 
                     value={newOrg.bin}
@@ -163,7 +163,7 @@ const OrganizationsPage = () => {
                   disabled={createOrgMutation.isPending}
                   className="w-full bg-brand-black text-brand-eggshell py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
                 >
-                  {createOrgMutation.isPending ? <Loader2 className="animate-spin" /> : 'Create Organization'}
+                  {createOrgMutation.isPending ? <Loader2 className="animate-spin" /> : 'Создать организацию'}
                 </button>
               </form>
             </motion.div>
@@ -188,31 +188,31 @@ const OrganizationsPage = () => {
                 <Plus size={32} className="rotate-45" />
               </button>
 
-              <h2 className="text-3xl font-black text-brand-black mb-2">Invite Members</h2>
-              <p className="text-brand-black/40 font-medium mb-8">Invite users to join your organization.</p>
+              <h2 className="text-3xl font-black text-brand-black mb-2">Пригласить сотрудников</h2>
+              <p className="text-brand-black/40 font-medium mb-8">Пригласите пользователей в организацию.</p>
 
               <form onSubmit={handleInvite} className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Search for users</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Поиск пользователей</label>
                   <input 
                     type="text" 
                     value={inviteSearch}
                     onChange={(e) => setInviteSearch(e.target.value)}
-                    placeholder="Search for users..."
+                    placeholder="Введите email или телефон..."
                     className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-4 px-6 focus:border-brand-aquamarine focus:bg-white focus:outline-none transition-all"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Invite to Organization</label>
+                  <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Организация</label>
                   <select 
                     value={selectedOrg?.id}
                     onChange={(e) => setSelectedOrg(orgs.find(org => org.id === e.target.value))}
                     className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-4 px-6 focus:border-brand-aquamarine focus:bg-white focus:outline-none transition-all"
                     required
                   >
-                    <option value="">Select an organization</option>
+                    <option value="">Выберите организацию</option>
                     {orgs?.map(org => (
                       <option key={org.id} value={org.id}>{org.name}</option>
                     ))}
@@ -224,7 +224,7 @@ const OrganizationsPage = () => {
                   disabled={createOrgMutation.isPending}
                   className="w-full bg-brand-black text-brand-eggshell py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
                 >
-                  {createOrgMutation.isPending ? <Loader2 className="animate-spin" /> : 'Invite Members'}
+                  {createOrgMutation.isPending ? <Loader2 className="animate-spin" /> : 'Отправить приглашение'}
                 </button>
               </form>
             </motion.div>

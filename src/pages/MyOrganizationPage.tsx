@@ -168,7 +168,7 @@ const MyOrganizationPage = () => {
         </div>
         {canManageTeam && (
           <button
-            onClick={() => navigate({ to: '/dashboard/org-settings' })}
+            onClick={() => navigate({ to: '/dashboard/organizations' })}
             className="text-brand-black/60 hover:text-brand-black font-medium inline-flex items-center gap-2 transition-colors"
           >
             <Settings size={16} />
@@ -237,8 +237,8 @@ const MyOrganizationPage = () => {
                 </div>
                 <div className="flex items-center gap-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold ${emp.status === 'active'
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-yellow-100 text-yellow-700'
+                    ? 'bg-green-100 text-green-700'
+                    : 'bg-yellow-100 text-yellow-700'
                     }`}>
                     {emp.status === 'active' ? 'Активен' : 'Приглашён'}
                   </span>
@@ -340,8 +340,8 @@ const MyOrganizationPage = () => {
                       key={option.value}
                       onClick={() => setInviteRole(option.value)}
                       className={`p-3 rounded-xl font-medium transition-all ${inviteRole === option.value
-                          ? 'bg-brand-black text-brand-eggshell'
-                          : 'bg-brand-eggshell text-brand-black hover:bg-brand-black/5'
+                        ? 'bg-brand-black text-brand-eggshell'
+                        : 'bg-brand-eggshell text-brand-black hover:bg-brand-black/5'
                         }`}
                     >
                       {option.label}
