@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  UserCheck, 
-  Plus, 
+import {
+  UserCheck,
+  Plus,
   Loader2,
   Mail,
   Phone,
@@ -13,12 +13,14 @@ import {
 } from 'lucide-react';
 import { counterpartyApi } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useWorkspace } from '../hooks/useWorkspace';
 
 const CounterpartiesPage = () => {
   const queryClient = useQueryClient();
+  const { selectedOrgId } = useWorkspace();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newCP, setNewCP] = useState({
-    organization_id: 1,
+    organization_id: selectedOrgId || 0,
     type: 'LEGAL',
     name: '',
     bin: '',
@@ -29,17 +31,18 @@ const CounterpartiesPage = () => {
   });
 
   const { data: counterparties, isLoading } = useQuery({
-    queryKey: ['counterparties'],
-    queryFn: () => counterpartyApi.list(1).then(res => res.data),
+    queryKey: ['counterparties', selectedOrgId],
+    queryFn: () => selectedOrgId ? counterpartyApi.list(selectedOrgId).then(res => res.data) : Promise.resolve([]),
+    enabled: !!selectedOrgId
   });
 
   const createMutation = useMutation({
     mutationFn: counterpartyApi.create,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['counterparties'] });
+      queryClient.invalidateQueries({ queryKey: ['counterparties', selectedOrgId] });
       setIsCreateOpen(false);
       setNewCP({
-        organization_id: 1,
+        organization_id: selectedOrgId || 0,
         type: 'LEGAL',
         name: '',
         bin: '',
@@ -53,7 +56,9 @@ const CounterpartiesPage = () => {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(newCP);
+    if (selectedOrgId) {
+      createMutation.mutate({ ...newCP, organization_id: selectedOrgId });
+    }
   };
 
   return (
@@ -63,9 +68,15 @@ const CounterpartiesPage = () => {
           <h1 className="text-4xl font-black text-brand-black mb-2">Контрагенты</h1>
           <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Управляйте клиентами и партнерами</p>
         </div>
-        <button 
-          onClick={() => setIsCreateOpen(true)}
-          className="bg-brand-aquamarine text-brand-black px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 shadow-sm"
+        <button
+          onClick={() => {
+            if (selectedOrgId) {
+              setNewCP(prev => ({ ...prev, organization_id: selectedOrgId }));
+              setIsCreateOpen(true);
+            }
+          }}
+          disabled={!selectedOrgId}
+          className="bg-brand-aquamarine text-brand-black px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus size={20} />
           Добавить контрагента
@@ -74,8 +85,8 @@ const CounterpartiesPage = () => {
 
       <div className="mb-8 relative group">
         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={24} />
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder="Поиск контрагентов..."
           className="w-full bg-white border border-brand-black/5 rounded-[24px] py-6 pl-16 pr-8 focus:outline-none focus:ring-4 focus:ring-brand-aquamarine/10 focus:border-brand-aquamarine/50 transition-all font-bold text-lg"
         />
@@ -110,21 +121,21 @@ const CounterpartiesPage = () => {
                     </div>
                   </td>
                   <td className="px-8 py-6">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2 text-sm font-medium text-brand-black/60">
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-center gap-2 text-sm font-medium text-brand-black/60">
                         <Mail size={14} /> {cp.email || '—'}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm font-medium text-brand-black/60">
-                        <Phone size={14} /> {cp.phone || '—'}
-                        </div>
                       </div>
-                    </td>
-                    <td className="px-8 py-6">
-                      <div className="flex flex-col">
+                      <div className="flex items-center gap-2 text-sm font-medium text-brand-black/60">
+                        <Phone size={14} /> {cp.phone || '—'}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-8 py-6">
+                    <div className="flex flex-col">
                       <span className="text-sm font-bold text-brand-black">{cp.signatory?.full_name || '—'}</span>
                       <span className="text-xs text-brand-black/40 font-bold">{cp.signatory?.position}</span>
-                      </div>
-                    </td>
+                    </div>
+                  </td>
                   <td className="px-8 py-6">
                     <span className="px-3 py-1 bg-brand-eggshell text-brand-black/60 rounded-full text-[10px] font-black uppercase tracking-wider">
                       {cp.type}
@@ -151,13 +162,13 @@ const CounterpartiesPage = () => {
       <AnimatePresence>
         {isCreateOpen && (
           <div className="fixed inset-0 bg-brand-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-[40px] p-12 max-w-2xl w-full shadow-2xl relative"
             >
-              <button 
+              <button
                 onClick={() => setIsCreateOpen(false)}
                 className="absolute top-8 right-8 text-brand-black/20 hover:text-brand-black transition-colors"
               >
@@ -171,25 +182,25 @@ const CounterpartiesPage = () => {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-4">
                     <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Данные контрагента</h4>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="ФИО / Название компании"
                       value={newCP.name}
-                      onChange={e => setNewCP({...newCP, name: e.target.value})}
+                      onChange={e => setNewCP({ ...newCP, name: e.target.value })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                       required
                     />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="БИН / ИИН"
                       value={newCP.bin}
-                      onChange={e => setNewCP({...newCP, bin: e.target.value})}
+                      onChange={e => setNewCP({ ...newCP, bin: e.target.value })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                       required
                     />
-                    <select 
+                    <select
                       value={newCP.type}
-                      onChange={e => setNewCP({...newCP, type: e.target.value})}
+                      onChange={e => setNewCP({ ...newCP, type: e.target.value })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                     >
                       <option value="LEGAL">Юридическое лицо</option>
@@ -198,25 +209,25 @@ const CounterpartiesPage = () => {
                   </div>
                   <div className="space-y-4">
                     <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Контактные данные</h4>
-                    <input 
-                      type="email" 
+                    <input
+                      type="email"
                       placeholder="Электронная почта"
                       value={newCP.email}
-                      onChange={e => setNewCP({...newCP, email: e.target.value})}
+                      onChange={e => setNewCP({ ...newCP, email: e.target.value })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                     />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Телефон"
                       value={newCP.phone}
-                      onChange={e => setNewCP({...newCP, phone: e.target.value})}
+                      onChange={e => setNewCP({ ...newCP, phone: e.target.value })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                     />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Адрес"
                       value={newCP.address.full_address}
-                      onChange={e => setNewCP({...newCP, address: { full_address: e.target.value }})}
+                      onChange={e => setNewCP({ ...newCP, address: { full_address: e.target.value } })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                     />
                   </div>
@@ -225,31 +236,31 @@ const CounterpartiesPage = () => {
                 <div className="space-y-4">
                   <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Подписант</h4>
                   <div className="grid grid-cols-3 gap-4">
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="ФИО"
                       value={newCP.signatory.full_name}
-                      onChange={e => setNewCP({...newCP, signatory: {...newCP.signatory, full_name: e.target.value}})}
+                      onChange={e => setNewCP({ ...newCP, signatory: { ...newCP.signatory, full_name: e.target.value } })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                     />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Должность"
                       value={newCP.signatory.position}
-                      onChange={e => setNewCP({...newCP, signatory: {...newCP.signatory, position: e.target.value}})}
+                      onChange={e => setNewCP({ ...newCP, signatory: { ...newCP.signatory, position: e.target.value } })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                     />
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       placeholder="Основание"
                       value={newCP.signatory.basis}
-                      onChange={e => setNewCP({...newCP, signatory: {...newCP.signatory, basis: e.target.value}})}
+                      onChange={e => setNewCP({ ...newCP, signatory: { ...newCP.signatory, basis: e.target.value } })}
                       className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                     />
                   </div>
                 </div>
 
-                <button 
+                <button
                   type="submit"
                   disabled={createMutation.isPending}
                   className="w-full bg-brand-black text-brand-eggshell py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"

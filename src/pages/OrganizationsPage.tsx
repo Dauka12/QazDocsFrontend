@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Building2,
@@ -14,7 +15,8 @@ import CreateOrganizationModal from '../components/CreateOrganizationModal';
 
 const OrganizationsPage = () => {
   const queryClient = useQueryClient();
-  const { refreshUser } = useWorkspace();
+  const navigate = useNavigate();
+  const { refreshUser, switchToOrg } = useWorkspace();
   const [isCreateOrgOpen, setIsCreateOrgOpen] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
   const [isInviteOpen, setIsInviteOpen] = useState(false);
@@ -89,7 +91,18 @@ const OrganizationsPage = () => {
                 <span>•</span>
                 <span>{org.type}</span>
               </div>
-              <button className="w-full flex items-center justify-between p-4 bg-brand-eggshell rounded-2xl font-black hover:bg-brand-black hover:text-brand-eggshell transition-all">
+              <button
+                onClick={async () => {
+                  try {
+                    await refreshUser();
+                    switchToOrg(org.id || org.organization_id);
+                    navigate({ to: '/dashboard/documents' });
+                  } catch (e) {
+                    console.error('Failed to switch org', e);
+                  }
+                }}
+                className="w-full flex items-center justify-between p-4 bg-brand-eggshell rounded-2xl font-black hover:bg-brand-black hover:text-brand-eggshell transition-all"
+              >
                 Открыть рабочее пространство <ChevronRight size={18} />
               </button>
             </motion.div>

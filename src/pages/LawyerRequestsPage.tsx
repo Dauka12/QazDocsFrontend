@@ -11,7 +11,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
-import { lawyerReviewApi } from '../lib/api';
+import { docApi, lawyerReviewApi } from '../lib/api';
 import { useWorkspace } from '../hooks/useWorkspace';
 
 interface LegalRequest {
@@ -57,16 +57,21 @@ const LawyerRequestsPage = () => {
 
   const acceptMutation = useMutation({
     mutationFn: (id: number) => lawyerReviewApi.accept(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lawyer-requests'] });
+    onSuccess: (_, id) => {
+      queryClient.invalidateQueries({ queryKey: ['lawyer-requests'], exact: false });
+      setSelectedRequest((prev) => (prev && prev.id == id ? { ...prev, status: 'IN_PROGRESS' } : prev));
     },
   });
 
   const completeMutation = useMutation({
     mutationFn: ({ id, data }: { id: number; data: any }) => lawyerReviewApi.complete(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lawyer-requests'] });
-      setSelectedRequest(null);
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['lawyer-requests'], exact: false });
+      setSelectedRequest((prev) => (
+        prev && prev.id == variables.id
+          ? { ...prev, status: 'COMPLETED', verdict: variables.data.verdict, lawyer_comments: variables.data.comments, legality_confirmed: variables.data.legality_confirmed }
+          : prev
+      ));
       setVerdict('');
       setComments('');
     },
@@ -74,9 +79,9 @@ const LawyerRequestsPage = () => {
 
   const declineMutation = useMutation({
     mutationFn: ({ id, reason }: { id: number; reason: string }) => lawyerReviewApi.decline(id, { reason }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['lawyer-requests'] });
-      setSelectedRequest(null);
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['lawyer-requests'], exact: false });
+      setSelectedRequest((prev) => (prev && prev.id == variables.id ? { ...prev, status: 'DECLINED', lawyer_comments: variables.reason } : prev));
     },
   });
 
@@ -112,6 +117,27 @@ const LawyerRequestsPage = () => {
 
   const handleDecline = (id: number, reason: string) => {
     declineMutation.mutate({ id, reason });
+  };
+
+  const toFileName = (title: string | undefined, docId: number) => {
+    if (!title) return `document_${docId}.pdf`;
+    const sanitized = title.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').trim();
+    return `${sanitized || `document_${docId}`}.pdf`;
+  };
+
+  const handleDownload = async (docId: number, title?: string) => {
+    try {
+      const res = await docApi.exportPdf(docId);
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', toFileName(title, docId));
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Download failed', err);
+    }
   };
 
   return (
@@ -184,7 +210,7 @@ const LawyerRequestsPage = () => {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-brand-black/60">
                         <FileText size={14} />
-                        <span>Документ #{request.document_id}</span>
+                        <span>{request.document_title || `Документ #${request.document_id}`}</span>
                       </div>
                       {request.message && (
                         <p className="mt-2 text-sm text-brand-black/50 line-clamp-2">
@@ -238,6 +264,19 @@ const LawyerRequestsPage = () => {
                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${statusConfig[selectedRequest.status].color}`}>
                   {statusConfig[selectedRequest.status].label}
                 </span>
+              </div>
+
+              <div>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand-black/40 mb-1">
+                  Документ
+                </p>
+                <button
+                  onClick={() => handleDownload(selectedRequest.document_id, selectedRequest.document_title)}
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-brand-eggshell rounded-xl font-bold text-sm text-brand-black hover:bg-brand-black/5 transition-all"
+                >
+                  <FileText size={16} />
+                  Скачать PDF
+                </button>
               </div>
             </div>
 

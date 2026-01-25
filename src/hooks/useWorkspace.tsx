@@ -54,10 +54,10 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       }
       const response = await authApi.getMe();
       setUser(response.data);
-      
+
       // Check if there's a saved org selection
       const savedOrgId = localStorage.getItem('selectedOrgId');
-      if (savedOrgId && response.data.organizations?.some((o: OrgMembership) => o.organization_id === parseInt(savedOrgId))) {
+      if (savedOrgId && response.data.organizations?.some((o: OrgMembership) => o.organization_id == parseInt(savedOrgId))) {
         setSelectedOrgId(parseInt(savedOrgId));
         setWorkspace('organization');
       }

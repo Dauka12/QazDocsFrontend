@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FileText, 
-  Plus, 
+import {
+  FileText,
+  Plus,
   ChevronRight,
   Loader2,
   Search,
@@ -19,15 +19,18 @@ import {
   Copy,
   PencilLine,
   Eye,
-  UserPlus
+  UserPlus,
+  Scale
 } from 'lucide-react';
-import { assignmentApi, authApi, counterpartyApi, docApi, orgApi } from '../lib/api';
+import { assignmentApi, authApi, counterpartyApi, docApi, lawyerReviewApi, orgApi } from '../lib/api';
 import { useDebounce } from '../hooks/useDebounce';
+import { useWorkspace } from '../hooks/useWorkspace';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { DayPicker } from 'react-day-picker';
 import { format } from 'date-fns';
 import 'react-day-picker/dist/style.css';
+import SendToLawyerModal from '../components/SendToLawyerModal';
 
 const formatBIN = (value: string) => {
   const digits = value.replace(/\D/g, '').slice(0, 12);
@@ -78,9 +81,18 @@ const DocumentsPage = () => {
   const [shareSearch, setShareSearch] = useState('');
   const [shareMessage, setShareMessage] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
-  const [docsScope, setDocsScope] = useState<'personal' | 'organization'>('personal');
-  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
-  const [wizardData, setWizardData] = useState({ 
+
+  // Workspace integration
+  const {
+    workspace: docsScope,
+    selectedOrgId,
+    switchToPersonal,
+    switchToOrg,
+    organizations: orgs
+  } = useWorkspace();
+
+  const [lawyerDoc, setLawyerDoc] = useState<any>(null);
+  const [wizardData, setWizardData] = useState({
     organization_id: 1,
     counterparty_id: null as number | null,
     document_type: 'SERVICE_AGREEMENT',
@@ -118,16 +130,9 @@ const DocumentsPage = () => {
     }
   }, [generationResult]);
 
-  const { data: orgs } = useQuery({
-    queryKey: ['organizations', 'my'],
-    queryFn: () => orgApi.listMy().then(res => res.data),
-  });
 
-  useEffect(() => {
-    if (!selectedOrgId && Array.isArray(orgs) && orgs.length > 0) {
-      setSelectedOrgId(orgs[0].id);
-    }
-  }, [orgs, selectedOrgId]);
+
+  // Removed redundant orgs query and effect since we use global state now
 
   const wizardOrgId = wizardData.organization_id || selectedOrgId || 1;
 
@@ -149,11 +154,11 @@ const DocumentsPage = () => {
     queryFn: () => authApi.searchUsers(debouncedShareSearch).then(res => res.data),
     enabled: !!shareDoc && debouncedShareSearch.length > 2,
   });
-  
+
   const { data: templates } = useQuery({
     queryKey: ['templates'],
     queryFn: () => docApi.listTemplates().then(res => res.data),
-    enabled: isGenerateDocOpen,
+    enabled: true,
   });
 
   const { data: myDocs, isLoading: isLoadingMyDocs } = useQuery({
@@ -165,6 +170,16 @@ const DocumentsPage = () => {
     queryKey: ['documents', 'organization', selectedOrgId],
     queryFn: () => docApi.listOrganizationDocuments(selectedOrgId as number).then(res => res.data),
     enabled: docsScope === 'organization' && !!selectedOrgId,
+  });
+
+  const { data: sentRequests = [] } = useQuery({
+    queryKey: ['sent-requests'],
+    queryFn: () => lawyerReviewApi.sent().then(res => res.data),
+  });
+
+  const { data: sentAssignments = [] } = useQuery({
+    queryKey: ['sent-assignments'],
+    queryFn: () => assignmentApi.listSent().then(res => res.data),
   });
 
   const generateMutation = useMutation({
@@ -204,13 +219,18 @@ const DocumentsPage = () => {
     }
   });
 
+  const toFileName = (title: string, format: 'pdf' | 'docx') => {
+    const sanitized = title.replace(/[\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').trim();
+    return `${sanitized || 'document'}.${format}`;
+  };
+
   const handleExport = async (id: number, format: 'pdf' | 'docx') => {
     try {
       const res = format === 'pdf' ? await docApi.exportPdf(id) : await docApi.exportDocx(id);
       const url = window.URL.createObjectURL(new Blob([res.data]));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `document_${id}.${format}`);
+      link.setAttribute('download', toFileName(getDocumentTitle(id), format));
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -339,6 +359,59 @@ const DocumentsPage = () => {
         ? 'Документы организации пока не созданы.'
         : 'Выберите организацию для просмотра документов.';
 
+  const signAssignments = Array.isArray(sentAssignments)
+    ? sentAssignments.filter((assignment: any) => assignment.action_required === 'SIGN' && assignment.status === 'PENDING')
+    : [];
+
+  const lawyerReviewRequests = Array.isArray(sentRequests)
+    ? sentRequests.filter((req: any) => req.status === 'NEW' || req.status === 'IN_PROGRESS')
+    : [];
+
+  const templateMap = Array.isArray(templates)
+    ? new Map(templates.map((tmpl: any) => [tmpl.id, tmpl.name]))
+    : new Map();
+
+  const getDocumentTitle = (docId: number) => {
+    const pool = Array.isArray(myDocs) ? myDocs : [];
+    const orgPool = Array.isArray(orgDocs) ? orgDocs : [];
+    const doc = [...pool, ...orgPool].find((item: any) => item.id === docId);
+    const templateTitle = doc?.template_id ? templateMap.get(doc.template_id) : null;
+    return doc?.name || templateTitle || `Документ #${docId}`;
+  };
+
+  const getDocumentTitleFromDoc = (doc: any) => {
+    if (!doc) return 'Документ';
+    const templateTitle = doc.template_id ? templateMap.get(doc.template_id) : null;
+    return doc.name || templateTitle || `Документ #${doc.id}`;
+  };
+
+  const getLawyerReviewStatus = (docId: number) => {
+    const related = Array.isArray(sentRequests)
+      ? sentRequests.filter((req: any) => req.document_id === docId)
+      : [];
+    if (related.length === 0) return null;
+    if (related.some((req: any) => req.status === 'NEW' || req.status === 'IN_PROGRESS')) {
+      return { label: 'На проверке у юриста', color: 'bg-yellow-100 text-yellow-700' };
+    }
+    const completed = related.find((req: any) => req.status === 'COMPLETED');
+    if (completed) {
+      return completed.legality_confirmed
+        ? { label: 'Проверено юристом', color: 'bg-green-100 text-green-700' }
+        : { label: 'Есть замечания юриста', color: 'bg-red-100 text-red-700' };
+    }
+    return null;
+  };
+
+  const getSigningStatus = (docId: number) => {
+    const related = Array.isArray(sentAssignments)
+      ? sentAssignments.filter((assignment: any) => assignment.document_id === docId)
+      : [];
+    if (related.some((assignment: any) => assignment.action_required === 'SIGN' && assignment.status === 'PENDING')) {
+      return { label: 'На подписи', color: 'bg-blue-100 text-blue-700' };
+    }
+    return null;
+  };
+
   return (
     <div className="p-12">
       <div className="flex justify-between items-center mb-12">
@@ -346,7 +419,7 @@ const DocumentsPage = () => {
           <h1 className="text-4xl font-black text-brand-black mb-2">Документы</h1>
           <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Управляйте интеллектуальным юридическим пространством.</p>
         </div>
-        <button 
+        <button
           onClick={() => {
             if (docsScope === 'organization' && selectedOrgId) {
               setWizardData((prev) => ({ ...prev, organization_id: selectedOrgId }));
@@ -364,19 +437,19 @@ const DocumentsPage = () => {
         <div className="inline-flex items-center bg-brand-eggshell rounded-2xl p-1 border border-brand-black/5">
           <button
             type="button"
-            onClick={() => setDocsScope('personal')}
-            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
-              docsScope === 'personal' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:text-brand-black'
-            }`}
+            onClick={() => switchToPersonal()}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${docsScope === 'personal' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:text-brand-black'
+              }`}
           >
             Мои документы
           </button>
           <button
             type="button"
-            onClick={() => setDocsScope('organization')}
-            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
-              docsScope === 'organization' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:text-brand-black'
-            }`}
+            onClick={() => {
+              if (orgs.length > 0) switchToOrg(orgs[0].organization_id);
+            }}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${docsScope === 'organization' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:text-brand-black'
+              }`}
           >
             Документы организации
           </button>
@@ -389,23 +462,93 @@ const DocumentsPage = () => {
               value={selectedOrgId ?? ''}
               onChange={(e) => {
                 const value = e.target.value;
-                setSelectedOrgId(value ? Number(value) : null);
+                if (value) switchToOrg(Number(value));
               }}
               className="bg-white border border-brand-black/10 rounded-2xl py-3 px-4 font-bold focus:outline-none focus:ring-4 focus:ring-brand-aquamarine/10 focus:border-brand-aquamarine/50 transition-all"
             >
               <option value="">Выберите организацию</option>
               {Array.isArray(orgs) && orgs.map((org: any) => (
-                <option key={org.id} value={org.id}>{org.name}</option>
+                <option key={org.organization_id} value={org.organization_id}>{org.organization_name}</option>
               ))}
             </select>
           </div>
         )}
       </div>
 
+      {docsScope === 'personal' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-10">
+          <div className="bg-white rounded-[32px] border border-brand-black/5 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-black text-brand-black">На подписи</h3>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-black/40">
+                  {signAssignments.length} {signAssignments.length === 1 ? 'документ' : 'документов'}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-blue-100 flex items-center justify-center">
+                <ShieldCheck size={20} className="text-blue-700" />
+              </div>
+            </div>
+            {signAssignments.length === 0 ? (
+              <p className="text-sm font-bold text-brand-black/40">Нет документов, направленных на подпись.</p>
+            ) : (
+              <div className="space-y-3">
+                {signAssignments.slice(0, 3).map((assignment: any) => (
+                  <div key={assignment.id} className="flex items-center justify-between p-3 bg-brand-eggshell/60 rounded-2xl">
+                    <div>
+                      <div className="text-sm font-black text-brand-black">{getDocumentTitle(assignment.document_id)}</div>
+                      <div className="text-xs text-brand-black/50">
+                        Получатель: {assignment.to_user_name || assignment.to_user_id}
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-blue-700 bg-blue-100 px-2 py-1 rounded-full">
+                      Ожидает
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white rounded-[32px] border border-brand-black/5 shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-black text-brand-black">На проверке у юриста</h3>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-black/40">
+                  {lawyerReviewRequests.length} {lawyerReviewRequests.length === 1 ? 'заявка' : 'заявок'}
+                </p>
+              </div>
+              <div className="w-10 h-10 rounded-2xl bg-yellow-100 flex items-center justify-center">
+                <Scale size={20} className="text-yellow-700" />
+              </div>
+            </div>
+            {lawyerReviewRequests.length === 0 ? (
+              <p className="text-sm font-bold text-brand-black/40">Нет документов на проверке.</p>
+            ) : (
+              <div className="space-y-3">
+                {lawyerReviewRequests.slice(0, 3).map((req: any) => (
+                  <div key={req.id} className="flex items-center justify-between p-3 bg-brand-eggshell/60 rounded-2xl">
+                    <div>
+                      <div className="text-sm font-black text-brand-black">{getDocumentTitle(req.document_id)}</div>
+                      <div className="text-xs text-brand-black/50">
+                        Юрист: {req.lawyer_name || 'Свободный юрист'}
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-yellow-700 bg-yellow-100 px-2 py-1 rounded-full">
+                      {req.status === 'NEW' ? 'Новая' : 'В работе'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="mb-8 relative group">
         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={24} />
-        <input 
-          type="text" 
+        <input
+          type="text"
           placeholder="Поиск документов..."
           className="w-full bg-white border border-brand-black/5 rounded-[24px] py-6 pl-16 pr-8 focus:outline-none focus:ring-4 focus:ring-brand-aquamarine/10 focus:border-brand-aquamarine/50 transition-all font-bold text-lg"
         />
@@ -433,16 +576,27 @@ const DocumentsPage = () => {
                       <div className="w-10 h-10 bg-brand-aquamarine/20 rounded-xl flex items-center justify-center">
                         <FileText className="text-brand-aquamarine" size={20} />
                       </div>
-                      <span className="font-bold text-brand-black">{doc.name || 'Договор оказания услуг'}</span>
+                      <div>
+                        <div className="font-bold text-brand-black">{getDocumentTitleFromDoc(doc)}</div>
+                        {getSigningStatus(doc.id) && (
+                          <span className={`inline-block mt-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getSigningStatus(doc.id)?.color}`}>
+                            {getSigningStatus(doc.id)?.label}
+                          </span>
+                        )}
+                        {getLawyerReviewStatus(doc.id) && (
+                          <span className={`inline-block mt-2 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${getLawyerReviewStatus(doc.id)?.color}`}>
+                            {getLawyerReviewStatus(doc.id)?.label}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </td>
                   <td className="px-8 py-6 text-sm font-medium text-brand-black/60">{doc.type || 'Юридический'}</td>
                   <td className="px-8 py-6">
-                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
-                      doc.status === 'APPROVED' ? 'bg-green-100 text-green-600' : 
+                    <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${doc.status === 'APPROVED' ? 'bg-green-100 text-green-600' :
                       doc.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-600' :
-                      'bg-blue-100 text-blue-600'
-                    }`}>
+                        'bg-blue-100 text-blue-600'
+                      }`}>
                       {formatDocStatus(doc.status)}
                     </span>
                   </td>
@@ -451,15 +605,22 @@ const DocumentsPage = () => {
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex justify-end gap-2">
-                      <button 
+                      <button
                         onClick={() => setShareDoc(doc)}
                         className="p-2 hover:bg-brand-black/5 text-brand-black/40 hover:text-brand-black rounded-lg transition-all"
                         title="Отправить на подпись"
                       >
                         <Send size={20} />
                       </button>
+                      <button
+                        onClick={() => setLawyerDoc(doc)}
+                        className="p-2 hover:bg-brand-black/5 text-brand-black/40 hover:text-brand-black rounded-lg transition-all"
+                        title="Отправить на проверку юристу"
+                      >
+                        <Scale size={20} />
+                      </button>
                       {doc.status === 'DRAFT' && (
-                        <button 
+                        <button
                           onClick={() => approveMutation.mutate(doc.id)}
                           className="p-2 hover:bg-brand-aquamarine/20 text-brand-aquamarine rounded-lg transition-all"
                           title="Утвердить"
@@ -469,14 +630,14 @@ const DocumentsPage = () => {
                       )}
                       {(doc.status === 'APPROVED' || doc.status === 'SIGNED') && (
                         <>
-                          <button 
+                          <button
                             onClick={() => handleExport(doc.id, 'pdf')}
                             className="p-2 hover:bg-brand-black/5 text-brand-black/40 hover:text-red-500 rounded-lg transition-all"
                             title="Экспорт PDF"
                           >
                             <FileDown size={20} />
                           </button>
-                          <button 
+                          <button
                             onClick={() => handleExport(doc.id, 'docx')}
                             className="p-2 hover:bg-brand-black/5 text-brand-black/40 hover:text-blue-500 rounded-lg transition-all"
                             title="Экспорт DOCX"
@@ -533,13 +694,13 @@ const DocumentsPage = () => {
       <AnimatePresence>
         {isGenerateDocOpen && (
           <div className="fixed inset-0 bg-brand-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-6 overflow-y-auto">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-[40px] p-12 max-w-4xl w-full shadow-2xl relative my-8"
             >
-              <button 
+              <button
                 onClick={() => {
                   setIsGenerateDocOpen(false);
                   setStep(1);
@@ -562,8 +723,8 @@ const DocumentsPage = () => {
               {/* Progress Indicator */}
               <div className="flex gap-2 mb-8">
                 {[1, 2, 3].map((i) => (
-                  <div 
-                    key={i} 
+                  <div
+                    key={i}
                     className={`h-2 flex-1 rounded-full transition-all duration-500 ${step >= i ? 'bg-brand-aquamarine' : 'bg-brand-eggshell'}`}
                   />
                 ))}
@@ -597,13 +758,13 @@ const DocumentsPage = () => {
                     <div className="space-y-8">
                       {/* Executor (Us) */}
                       <div className="space-y-4">
-                      <div className="flex items-center justify-between gap-2 text-brand-aquamarine">
-                        <div className="flex items-center gap-2">
-                          <ShieldCheck size={18} />
-                          <h4 className="text-xs font-black uppercase tracking-widest">Наши реквизиты (исполнитель)</h4>
-                        </div>
-                        {profiles?.length > 0 && (
-                          <select 
+                        <div className="flex items-center justify-between gap-2 text-brand-aquamarine">
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck size={18} />
+                            <h4 className="text-xs font-black uppercase tracking-widest">Наши реквизиты (исполнитель)</h4>
+                          </div>
+                          {profiles?.length > 0 && (
+                            <select
                               onChange={(e) => {
                                 const p = profiles.find((pr: any) => pr.id === parseInt(e.target.value));
                                 if (p) applyProfile(p);
@@ -618,39 +779,39 @@ const DocumentsPage = () => {
                           )}
                         </div>
                         <div className="grid grid-cols-1 gap-3">
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             placeholder="Название компании"
                             value={wizardData.params.org_name}
-                            onChange={e => setWizardData({...wizardData, params: {...wizardData.params, org_name: e.target.value}})}
+                            onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, org_name: e.target.value } })}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                             required
                           />
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             placeholder="БИН"
                             value={formatBIN(wizardData.params.org_bin)}
                             onChange={e => {
                               const raw = e.target.value.replace(/\D/g, '').slice(0, 12);
-                              setWizardData({...wizardData, params: {...wizardData.params, org_bin: raw}});
+                              setWizardData({ ...wizardData, params: { ...wizardData.params, org_bin: raw } });
                             }}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                             required
                           />
                           <div className="grid grid-cols-2 gap-3">
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               placeholder="ФИО подписанта"
                               value={wizardData.params.org_signer_name}
-                              onChange={e => setWizardData({...wizardData, params: {...wizardData.params, org_signer_name: e.target.value}})}
+                              onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, org_signer_name: e.target.value } })}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                               required
                             />
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               placeholder="Основание (например, Устав)"
                               value={wizardData.params.org_signer_basis}
-                              onChange={e => setWizardData({...wizardData, params: {...wizardData.params, org_signer_basis: e.target.value}})}
+                              onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, org_signer_basis: e.target.value } })}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                               required
                             />
@@ -666,7 +827,7 @@ const DocumentsPage = () => {
                             <h4 className="text-xs font-black uppercase tracking-widest">Контрагент (заказчик)</h4>
                           </div>
                           {counterparties?.length > 0 && (
-                            <select 
+                            <select
                               onChange={(e) => {
                                 const cp = counterparties.find((c: any) => c.id === parseInt(e.target.value));
                                 if (cp) applyCounterparty(cp);
@@ -681,26 +842,25 @@ const DocumentsPage = () => {
                           )}
                         </div>
                         <div className="grid grid-cols-1 gap-3">
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             placeholder="Название компании"
                             value={wizardData.params.counterparty_name}
-                            onChange={e => setWizardData({...wizardData, params: {...wizardData.params, counterparty_name: e.target.value}})}
+                            onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, counterparty_name: e.target.value } })}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                             required
                           />
                           <div className="relative">
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               placeholder="БИН (12 цифр)"
                               value={formatBIN(wizardData.params.counterparty_bin)}
                               onChange={e => {
                                 const raw = e.target.value.replace(/\D/g, '').slice(0, 12);
-                                setWizardData({...wizardData, params: {...wizardData.params, counterparty_bin: raw}});
+                                setWizardData({ ...wizardData, params: { ...wizardData.params, counterparty_bin: raw } });
                               }}
-                              className={`w-full bg-brand-eggshell/50 border-2 rounded-2xl py-3 px-4 focus:outline-none transition-all font-bold ${
-                                wizardData.params.counterparty_bin.length === 12 ? 'border-brand-aquamarine/30 focus:border-brand-aquamarine' : 'border-transparent focus:border-brand-aquamarine'
-                              }`}
+                              className={`w-full bg-brand-eggshell/50 border-2 rounded-2xl py-3 px-4 focus:outline-none transition-all font-bold ${wizardData.params.counterparty_bin.length === 12 ? 'border-brand-aquamarine/30 focus:border-brand-aquamarine' : 'border-transparent focus:border-brand-aquamarine'
+                                }`}
                               required
                             />
                             {wizardData.params.counterparty_bin.length === 12 && (
@@ -708,19 +868,19 @@ const DocumentsPage = () => {
                             )}
                           </div>
                           <div className="grid grid-cols-2 gap-3">
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               placeholder="ФИО подписанта"
                               value={wizardData.params.counterparty_signer_name}
-                              onChange={e => setWizardData({...wizardData, params: {...wizardData.params, counterparty_signer_name: e.target.value}})}
+                              onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, counterparty_signer_name: e.target.value } })}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                               required
                             />
-                            <input 
-                              type="text" 
+                            <input
+                              type="text"
                               placeholder="Основание (например, Устав)"
                               value={wizardData.params.counterparty_signer_basis}
-                              onChange={e => setWizardData({...wizardData, params: {...wizardData.params, counterparty_signer_basis: e.target.value}})}
+                              onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, counterparty_signer_basis: e.target.value } })}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                               required
                             />
@@ -738,18 +898,18 @@ const DocumentsPage = () => {
                           <h4 className="text-xs font-black uppercase tracking-widest">Место и дата</h4>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
-                          <input 
-                            type="text" 
+                          <input
+                            type="text"
                             placeholder="Место (например, Алматы)"
                             value={wizardData.params.contract_place}
-                            onChange={e => setWizardData({...wizardData, params: {...wizardData.params, contract_place: e.target.value}})}
+                            onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, contract_place: e.target.value } })}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                             required
                           />
-                          <input 
-                            type="date" 
+                          <input
+                            type="date"
                             value={wizardData.params.contract_date}
-                            onChange={e => setWizardData({...wizardData, params: {...wizardData.params, contract_date: e.target.value}})}
+                            onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, contract_date: e.target.value } })}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                             required
                           />
@@ -771,24 +931,23 @@ const DocumentsPage = () => {
                                   type="button"
                                   onClick={() => {
                                     setSelectedCurrency(curr);
-                                    setWizardData({...wizardData, params: {...wizardData.params, currency: curr.code}});
+                                    setWizardData({ ...wizardData, params: { ...wizardData.params, currency: curr.code } });
                                   }}
-                                  className={`px-3 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap ${
-                                    selectedCurrency.code === curr.code ? 'bg-white text-brand-black shadow-sm scale-105' : 'text-brand-black/20 hover:text-brand-black/40'
-                                  }`}
+                                  className={`px-3 py-2 rounded-xl text-xs font-black transition-all whitespace-nowrap ${selectedCurrency.code === curr.code ? 'bg-white text-brand-black shadow-sm scale-105' : 'text-brand-black/20 hover:text-brand-black/40'
+                                    }`}
                                 >
                                   {curr.symbol} {curr.code}
                                 </button>
                               ))}
                             </div>
                             <div className="relative">
-                              <input 
-                                type="text" 
+                              <input
+                                type="text"
                                 placeholder={`Цена (${selectedCurrency.symbol})`}
                                 value={formatPrice(wizardData.params.price)}
                                 onChange={e => {
                                   const raw = e.target.value.replace(/\D/g, '');
-                                  setWizardData({...wizardData, params: {...wizardData.params, price: raw}});
+                                  setWizardData({ ...wizardData, params: { ...wizardData.params, price: raw } });
                                 }}
                                 className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold pr-12"
                                 required
@@ -798,7 +957,7 @@ const DocumentsPage = () => {
                           </div>
 
                           <div className="relative">
-                            <button 
+                            <button
                               type="button"
                               onClick={() => setShowCalendar(!showCalendar)}
                               className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-left flex justify-between items-center"
@@ -808,10 +967,10 @@ const DocumentsPage = () => {
                               </span>
                               <Calendar className="text-brand-black/20" size={18} />
                             </button>
-                            
+
                             <AnimatePresence>
                               {showCalendar && (
-                                <motion.div 
+                                <motion.div
                                   initial={{ opacity: 0, y: 10 }}
                                   animate={{ opacity: 1, y: 0 }}
                                   exit={{ opacity: 0, y: 10 }}
@@ -822,7 +981,7 @@ const DocumentsPage = () => {
                                     selected={wizardData.params.deadline ? new Date(wizardData.params.deadline) : undefined}
                                     onSelect={(date) => {
                                       if (date) {
-                                        setWizardData({...wizardData, params: {...wizardData.params, deadline: date.toISOString()}});
+                                        setWizardData({ ...wizardData, params: { ...wizardData.params, deadline: date.toISOString() } });
                                         setShowCalendar(false);
                                       }
                                     }}
@@ -832,10 +991,10 @@ const DocumentsPage = () => {
                             </AnimatePresence>
                           </div>
 
-                          <textarea 
+                          <textarea
                             placeholder="Описание услуг (например, продажа автомобильных дисков)"
                             value={wizardData.params.services}
-                            onChange={e => setWizardData({...wizardData, params: {...wizardData.params, services: e.target.value}})}
+                            onChange={e => setWizardData({ ...wizardData, params: { ...wizardData.params, services: e.target.value } })}
                             className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold min-h-[80px]"
                             required
                           />
@@ -855,7 +1014,7 @@ const DocumentsPage = () => {
                         <button
                           key={s}
                           type="button"
-                          onClick={() => setWizardData({...wizardData, strictness: s as any})}
+                          onClick={() => setWizardData({ ...wizardData, strictness: s as any })}
                           className={`flex-1 py-3 rounded-xl font-black transition-all ${wizardData.strictness === s ? 'bg-brand-black text-white shadow-lg scale-105' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'}`}
                         >
                           {s === 'SOFT' ? 'Мягкий' : s === 'STANDARD' ? 'Стандартный' : 'Жесткий'}
@@ -865,14 +1024,14 @@ const DocumentsPage = () => {
                   </div>
 
                   <div className="flex gap-4 pt-4">
-                    <button 
+                    <button
                       type="button"
                       onClick={() => setStep(1)}
                       className="flex-1 bg-brand-eggshell text-brand-black py-4 rounded-2xl font-black hover:bg-brand-black/5 transition-all"
                     >
                       Назад
                     </button>
-                    <button 
+                    <button
                       type="submit"
                       disabled={generateMutation.isPending}
                       className="flex-[2] bg-brand-black text-brand-eggshell py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
@@ -890,18 +1049,16 @@ const DocumentsPage = () => {
                       <button
                         type="button"
                         onClick={() => setPreviewMode('edit')}
-                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
-                          previewMode === 'edit' ? 'bg-brand-black text-white shadow-lg' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'
-                        }`}
+                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${previewMode === 'edit' ? 'bg-brand-black text-white shadow-lg' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'
+                          }`}
                       >
                         <PencilLine size={14} /> Редактирование
                       </button>
                       <button
                         type="button"
                         onClick={() => setPreviewMode('preview')}
-                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
-                          previewMode === 'preview' ? 'bg-brand-black text-white shadow-lg' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'
-                        }`}
+                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${previewMode === 'preview' ? 'bg-brand-black text-white shadow-lg' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'
+                          }`}
                       >
                         <Eye size={14} /> Просмотр
                       </button>
@@ -950,14 +1107,14 @@ const DocumentsPage = () => {
                           displayContent.document_sections.map((s: any, i: number) => (
                             <div key={i} className="prose prose-sm max-w-none">
                               <h3 className="text-xl font-black text-brand-black mb-4 pb-2 border-b border-brand-black/5">{s.title}</h3>
-                              <ReactMarkdown 
+                              <ReactMarkdown
                                 remarkPlugins={[remarkGfm]}
                                 components={{
-                                  p: ({children}) => <p className="text-brand-black/70 mb-4 leading-relaxed font-medium">{children}</p>,
-                                  ul: ({children}) => <ul className="list-disc pl-6 mb-4 space-y-2 text-brand-black/70 font-medium">{children}</ul>,
-                                  ol: ({children}) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-brand-black/70 font-medium">{children}</ol>,
-                                  li: ({children}) => <li>{children}</li>,
-                                  strong: ({children}) => <strong className="font-black text-brand-black">{children}</strong>,
+                                  p: ({ children }) => <p className="text-brand-black/70 mb-4 leading-relaxed font-medium">{children}</p>,
+                                  ul: ({ children }) => <ul className="list-disc pl-6 mb-4 space-y-2 text-brand-black/70 font-medium">{children}</ul>,
+                                  ol: ({ children }) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-brand-black/70 font-medium">{children}</ol>,
+                                  li: ({ children }) => <li>{children}</li>,
+                                  strong: ({ children }) => <strong className="font-black text-brand-black">{children}</strong>,
                                 }}
                               >
                                 {s.text}
@@ -991,7 +1148,7 @@ const DocumentsPage = () => {
                           </ul>
                         </div>
                       )}
-                      
+
                       {displayContent.risk_flags?.length > 0 && (
                         <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
                           <h5 className="text-xs font-black uppercase text-red-500 mb-2">Риски ИИ</h5>
@@ -1008,14 +1165,14 @@ const DocumentsPage = () => {
                   </div>
 
                   <div className="flex gap-4">
-                    <button 
+                    <button
                       onClick={handleSaveDraft}
                       disabled={updateMutation.isPending}
                       className="flex-1 bg-brand-eggshell text-brand-black py-4 rounded-2xl font-black hover:bg-brand-black/5 transition-all disabled:opacity-60"
                     >
                       Сохранить как черновик
                     </button>
-                    <button 
+                    <button
                       onClick={handleApprove}
                       disabled={approveMutation.isPending || updateMutation.isPending}
                       className="flex-1 bg-brand-aquamarine text-brand-black py-4 rounded-2xl font-black hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60"
@@ -1038,13 +1195,13 @@ const DocumentsPage = () => {
       <AnimatePresence>
         {shareDoc && (
           <div className="fixed inset-0 bg-brand-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-6">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-[40px] p-10 max-w-4xl w-full shadow-2xl relative"
             >
-              <button 
+              <button
                 onClick={() => {
                   setShareDoc(null);
                   setShareSearch('');
@@ -1143,6 +1300,14 @@ const DocumentsPage = () => {
           </div>
         )}
       </AnimatePresence>
+
+      <SendToLawyerModal
+        isOpen={!!lawyerDoc}
+        onClose={() => setLawyerDoc(null)}
+        documentId={lawyerDoc?.id}
+        documentTitle={lawyerDoc?.name || `Документ #${lawyerDoc?.id}`}
+        organizationId={lawyerDoc?.organization_id}
+      />
     </div>
   );
 };

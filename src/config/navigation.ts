@@ -160,14 +160,14 @@ export const NAV_ITEMS: Record<NavItemKey, NavItem> = {
   Team: {
     key: 'Team',
     label: 'Team',
-    labelRu: 'Команда',
+    labelRu: 'Сотрудники',
     icon: Users,
     path: '/dashboard/employees',
   },
   TeamReadonly: {
     key: 'TeamReadonly',
     label: 'Team',
-    labelRu: 'Команда',
+    labelRu: 'Сотрудники',
     icon: Users,
     path: '/dashboard/employees',
     readonly: true,
@@ -205,7 +205,9 @@ export const NAV_CONFIG = {
   },
   organization: {
     owner: ['Dashboard', 'Documents', 'Counterparties', 'Profiles', 'Team', 'OrgSettings', 'AuditLog'] as NavItemKey[],
+    admin: ['Dashboard', 'Documents', 'Counterparties', 'Profiles', 'Team', 'OrgSettings', 'AuditLog'] as NavItemKey[],
     manager: ['Dashboard', 'Documents', 'Counterparties', 'Profiles', 'TeamReadonly'] as NavItemKey[],
+    employee: ['Dashboard', 'Documents', 'CounterpartiesReadonly'] as NavItemKey[],
     accountant: ['Dashboard', 'DocumentsFinancial', 'Counterparties', 'Profiles', 'Registry'] as NavItemKey[],
     legal: ['DashboardReviewQueue', 'DocumentsAssigned', 'CounterpartiesReadonly'] as NavItemKey[],
   },

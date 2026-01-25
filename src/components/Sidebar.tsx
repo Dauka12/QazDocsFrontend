@@ -29,7 +29,8 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
   const currentPath = location.pathname;
 
   // Get navigation items based on workspace and role
-  const role = workspace === 'personal' ? accountRole : (orgRole || 'owner');
+  const rawRole = workspace === 'personal' ? accountRole : (orgRole || 'owner');
+  const role = rawRole.toLowerCase();
   const navItems = getNavItems(workspace, role);
 
   if (loading) {
@@ -73,8 +74,8 @@ const Sidebar = ({ activeTab, setActiveTab }: SidebarProps) => {
               key={item.key}
               onClick={() => navigate({ to: item.path.split('?')[0] as any })}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-bold transition-all ${isActive
-                  ? 'bg-brand-black text-brand-eggshell shadow-lg'
-                  : 'text-brand-black/40 hover:bg-brand-black/5 hover:text-brand-black'
+                ? 'bg-brand-black text-brand-eggshell shadow-lg'
+                : 'text-brand-black/40 hover:bg-brand-black/5 hover:text-brand-black'
                 }`}
             >
               <Icon size={20} />

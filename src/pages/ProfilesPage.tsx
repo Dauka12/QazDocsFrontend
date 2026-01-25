@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { 
-  ShieldCheck, 
-  Plus, 
+import {
+  ShieldCheck,
+  Plus,
   Loader2,
   Building,
   User,
@@ -12,12 +12,14 @@ import {
 } from 'lucide-react';
 import { orgApi } from '../lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useWorkspace } from '../hooks/useWorkspace';
 
 const ProfilesPage = () => {
   const queryClient = useQueryClient();
+  const { selectedOrgId } = useWorkspace();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newProfile, setNewProfile] = useState({
-    organization_id: 1,
+    organization_id: selectedOrgId || 0,
     name: '',
     legal_address: { full_address: '' },
     actual_address: { full_address: '' },
@@ -26,17 +28,18 @@ const ProfilesPage = () => {
   });
 
   const { data: profiles, isLoading } = useQuery({
-    queryKey: ['profiles'],
-    queryFn: () => orgApi.listProfiles(1).then(res => res.data),
+    queryKey: ['profiles', selectedOrgId],
+    queryFn: () => selectedOrgId ? orgApi.listProfiles(selectedOrgId).then(res => res.data) : Promise.resolve([]),
+    enabled: !!selectedOrgId
   });
 
   const createMutation = useMutation({
     mutationFn: orgApi.createProfile,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['profiles', selectedOrgId] });
       setIsCreateOpen(false);
       setNewProfile({
-        organization_id: 1,
+        organization_id: selectedOrgId || 0,
         name: '',
         legal_address: { full_address: '' },
         actual_address: { full_address: '' },
@@ -48,7 +51,9 @@ const ProfilesPage = () => {
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(newProfile);
+    if (selectedOrgId) {
+      createMutation.mutate({ ...newProfile, organization_id: selectedOrgId });
+    }
   };
 
   return (
@@ -58,9 +63,15 @@ const ProfilesPage = () => {
           <h1 className="text-4xl font-black text-brand-black mb-2">Профили организации</h1>
           <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Сохраняйте реквизиты для быстрого заполнения</p>
         </div>
-        <button 
-          onClick={() => setIsCreateOpen(true)}
-          className="bg-brand-aquamarine text-brand-black px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 shadow-sm"
+        <button
+          onClick={() => {
+            if (selectedOrgId) {
+              setNewProfile(prev => ({ ...prev, organization_id: selectedOrgId }));
+              setIsCreateOpen(true);
+            }
+          }}
+          disabled={!selectedOrgId}
+          className="bg-brand-aquamarine text-brand-black px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Plus size={20} />
           Добавить профиль
@@ -74,7 +85,7 @@ const ProfilesPage = () => {
           profiles.map((profile: any) => (
             <div key={profile.id} className="bg-white rounded-[40px] p-8 border border-brand-black/5 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-brand-aquamarine/5 rounded-bl-[100px] -mr-8 -mt-8 group-hover:bg-brand-aquamarine/10 transition-colors" />
-              
+
               <div className="flex items-center gap-4 mb-8">
                 <div className="w-14 h-14 bg-brand-aquamarine/20 rounded-2xl flex items-center justify-center">
                   <ShieldCheck className="text-brand-aquamarine" size={28} />
@@ -128,13 +139,13 @@ const ProfilesPage = () => {
       <AnimatePresence>
         {isCreateOpen && (
           <div className="fixed inset-0 bg-brand-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-6 overflow-y-auto">
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
               className="bg-white rounded-[40px] p-12 max-w-4xl w-full shadow-2xl relative my-8"
             >
-              <button 
+              <button
                 onClick={() => setIsCreateOpen(false)}
                 className="absolute top-8 right-8 text-brand-black/20 hover:text-brand-black transition-colors"
               >
@@ -149,30 +160,30 @@ const ProfilesPage = () => {
                   <div className="space-y-6">
                     <div className="space-y-4">
                       <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Общие данные</h4>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="Название профиля (например, Главный офис)"
                         value={newProfile.name}
-                        onChange={e => setNewProfile({...newProfile, name: e.target.value})}
+                        onChange={e => setNewProfile({ ...newProfile, name: e.target.value })}
                         className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                         required
                       />
                     </div>
                     <div className="space-y-4">
                       <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Адреса</h4>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="Юридический адрес"
                         value={newProfile.legal_address.full_address}
-                        onChange={e => setNewProfile({...newProfile, legal_address: { full_address: e.target.value }})}
+                        onChange={e => setNewProfile({ ...newProfile, legal_address: { full_address: e.target.value } })}
                         className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                         required
                       />
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="Фактический адрес"
                         value={newProfile.actual_address.full_address}
-                        onChange={e => setNewProfile({...newProfile, actual_address: { full_address: e.target.value }})}
+                        onChange={e => setNewProfile({ ...newProfile, actual_address: { full_address: e.target.value } })}
                         className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                       />
                     </div>
@@ -181,28 +192,28 @@ const ProfilesPage = () => {
                   <div className="space-y-6">
                     <div className="space-y-4">
                       <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Банковские реквизиты</h4>
-                      <input 
-                        type="text" 
+                      <input
+                        type="text"
                         placeholder="Название банка"
                         value={newProfile.bank_details.bank_name}
-                        onChange={e => setNewProfile({...newProfile, bank_details: {...newProfile.bank_details, bank_name: e.target.value}})}
+                        onChange={e => setNewProfile({ ...newProfile, bank_details: { ...newProfile.bank_details, bank_name: e.target.value } })}
                         className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
                         required
                       />
                       <div className="grid grid-cols-2 gap-3">
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder="ИИК (IBAN)"
                           value={newProfile.bank_details.iik}
-                          onChange={e => setNewProfile({...newProfile, bank_details: {...newProfile.bank_details, iik: e.target.value}})}
+                          onChange={e => setNewProfile({ ...newProfile, bank_details: { ...newProfile.bank_details, iik: e.target.value } })}
                           className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                           required
                         />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder="БИК"
                           value={newProfile.bank_details.bik}
-                          onChange={e => setNewProfile({...newProfile, bank_details: {...newProfile.bank_details, bik: e.target.value}})}
+                          onChange={e => setNewProfile({ ...newProfile, bank_details: { ...newProfile.bank_details, bik: e.target.value } })}
                           className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                           required
                         />
@@ -212,26 +223,26 @@ const ProfilesPage = () => {
                     <div className="space-y-4">
                       <h4 className="text-xs font-black uppercase tracking-widest text-brand-black/40">Подписант по умолчанию</h4>
                       <div className="grid grid-cols-2 gap-3">
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder="ФИО"
                           value={newProfile.signatories[0].full_name}
                           onChange={e => {
                             const sigs = [...newProfile.signatories];
                             sigs[0].full_name = e.target.value;
-                            setNewProfile({...newProfile, signatories: sigs});
+                            setNewProfile({ ...newProfile, signatories: sigs });
                           }}
                           className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                           required
                         />
-                        <input 
-                          type="text" 
+                        <input
+                          type="text"
                           placeholder="Должность"
                           value={newProfile.signatories[0].position}
                           onChange={e => {
                             const sigs = [...newProfile.signatories];
                             sigs[0].position = e.target.value;
-                            setNewProfile({...newProfile, signatories: sigs});
+                            setNewProfile({ ...newProfile, signatories: sigs });
                           }}
                           className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm"
                           required
@@ -241,7 +252,7 @@ const ProfilesPage = () => {
                   </div>
                 </div>
 
-                <button 
+                <button
                   type="submit"
                   disabled={createMutation.isPending}
                   className="w-full bg-brand-black text-brand-eggshell py-4 rounded-2xl font-black flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"

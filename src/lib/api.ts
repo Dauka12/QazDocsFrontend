@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://78.40.109.172:8000';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -49,6 +49,7 @@ export const assignmentApi = {
   assign: (docId: number, data: any) => api.post(`/documents/${docId}/assign`, data),
   listByDoc: (docId: number) => api.get(`/documents/${docId}/assignments`),
   listMy: () => api.get('/assignments/my'),
+  listSent: () => api.get('/assignments/sent'),
   complete: (id: number, data: any) => api.post(`/assignments/${id}/complete`, data),
   reject: (id: number, data: any) => api.post(`/assignments/${id}/reject`, data),
   return: (id: number, data: any) => api.post(`/assignments/${id}/return`, data),
