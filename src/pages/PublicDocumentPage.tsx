@@ -43,6 +43,10 @@ const PublicDocumentPage = () => {
       setOperation(null);
       refetch();
     },
+    onError: () => {
+      // Clear operation on error so the next attempt initializes a new one
+      setOperation(null);
+    }
   });
 
   const handleSignWithNca = async () => {
