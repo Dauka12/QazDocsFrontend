@@ -1,9 +1,9 @@
-import { 
-  Outlet, 
-  RouterProvider, 
-  createRootRoute, 
-  createRoute, 
-  createRouter 
+import {
+  Outlet,
+  RouterProvider,
+  createRootRoute,
+  createRoute,
+  createRouter
 } from '@tanstack/react-router'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -19,6 +19,8 @@ import EmployeesPage from './pages/EmployeesPage'
 import ProfilesPage from './pages/ProfilesPage'
 import CounterpartiesPage from './pages/CounterpartiesPage'
 import AssignmentsPage from './pages/AssignmentsPage'
+import PublicDocumentPage from './pages/PublicDocumentPage'
+import LawyerRequestsPage from './pages/LawyerRequestsPage'
 import Navbar from './components/Navbar'
 
 // Root Route
@@ -87,6 +89,12 @@ const registerRoute = createRoute({
   component: RegisterPage,
 })
 
+const publicDocumentRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/public/documents/$publicId',
+  component: PublicDocumentPage,
+})
+
 // Dashboard Layout Route
 const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -137,24 +145,32 @@ const assignmentsRoute = createRoute({
   component: AssignmentsPage,
 })
 
+const lawyerRequestsRoute = createRoute({
+  getParentRoute: () => dashboardRoute,
+  path: 'lawyer-requests',
+  component: LawyerRequestsPage,
+})
+
 // Router instance
 const routeTree = rootRoute.addChildren([
   marketingLayout.addChildren([
-    indexRoute, 
-    productsRoute, 
-    solutionsRoute, 
-    pricingRoute, 
-    aboutRoute, 
+    indexRoute,
+    productsRoute,
+    solutionsRoute,
+    pricingRoute,
+    aboutRoute,
     loginRoute,
     registerRoute,
   ]),
+  publicDocumentRoute,
   dashboardRoute.addChildren([
     dashboardIndexRoute,
     organizationsRoute,
     documentsRoute,
     profilesRoute,
     counterpartiesRoute,
-    assignmentsRoute
+    assignmentsRoute,
+    lawyerRequestsRoute
   ])
 ])
 const router = createRouter({ routeTree })

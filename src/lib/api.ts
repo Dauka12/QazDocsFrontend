@@ -62,12 +62,33 @@ export const docApi = {
   createDocument: (data: any) => api.post('/documents/create', data),
   listDocuments: (orgId: number) => api.get(`/documents/list?organization_id=${orgId}`),
   wizard: (data: any) => api.post('/documents/wizard', data),
+  update: (id: number, data: any) => api.patch(`/documents/${id}`, data),
   approve: (id: number) => api.post(`/documents/${id}/approve`),
   exportPdf: (id: number) => api.get(`/documents/${id}/export/pdf`, { responseType: 'blob' }),
   exportDocx: (id: number) => api.get(`/documents/${id}/export/docx`, { responseType: 'blob' }),
 };
 
+// Signing
+export const signingApi = {
+  init: (documentId: number) => api.post('/signing/init', { document_id: documentId }),
+  verify: (operationId: number, signedXML: string) => api.post('/signing/verify', { operation_id: operationId, signed_xml: signedXML }),
+  publicVerify: (publicId: string) => api.get(`/public/documents/${publicId}`),
+  listSignatures: (docId: number) => api.get(`/documents/${docId}/signatures`),
+};
+
 // AI
 export const aiApi = {
   generate: (data: any) => api.post('/v1/ai/generate', data),
+};
+
+// Lawyer Review Requests (for free_lawyer)
+export const lawyerReviewApi = {
+  create: (data: any) => api.post('/api/legal-requests', data),
+  inbox: (status?: string) => api.get(`/api/legal-requests/inbox${status ? `?status=${status}` : ''}`),
+  sent: () => api.get('/api/legal-requests/sent'),
+  get: (id: number) => api.get(`/api/legal-requests/${id}`),
+  accept: (id: number) => api.post(`/api/legal-requests/${id}/accept`),
+  complete: (id: number, data: any) => api.post(`/api/legal-requests/${id}/complete`, data),
+  decline: (id: number, data: any) => api.post(`/api/legal-requests/${id}/decline`, data),
+  searchLawyers: (query: string) => api.get(`/api/users/lawyers?q=${query}`),
 };

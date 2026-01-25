@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -13,10 +13,16 @@ import {
   MapPin,
   Calendar,
   Building,
-  User,
-  ShieldCheck
+  ShieldCheck,
+  Send,
+  Link2,
+  Copy,
+  PencilLine,
+  Eye,
+  UserPlus
 } from 'lucide-react';
-import { docApi, orgApi, counterpartyApi } from '../lib/api';
+import { assignmentApi, authApi, counterpartyApi, docApi, orgApi } from '../lib/api';
+import { useDebounce } from '../hooks/useDebounce';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { DayPicker } from 'react-day-picker';
@@ -50,9 +56,25 @@ const DocumentsPage = () => {
   const [isGenerateDocOpen, setIsGenerateDocOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [generationResult, setGenerationResult] = useState<any>(null);
+  const [editedContent, setEditedContent] = useState<any>(null);
+  const [previewMode, setPreviewMode] = useState<'edit' | 'preview'>('edit');
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState(CURRENCIES[0]);
   const [validationError, setValidationError] = useState<string | null>(null);
+  const [shareDoc, setShareDoc] = useState<any>(null);
+  const [shareSearch, setShareSearch] = useState('');
+  const [shareMessage, setShareMessage] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
+  const debouncedShareSearch = useDebounce(shareSearch, 300);
+
+  useEffect(() => {
+    if (generationResult?.content) {
+      setEditedContent(generationResult.content);
+      setPreviewMode('edit');
+    } else {
+      setEditedContent(null);
+    }
+  }, [generationResult]);
 
   // Auto-fill states
   const { data: profiles } = useQuery({
@@ -65,6 +87,12 @@ const DocumentsPage = () => {
     queryKey: ['counterparties'],
     queryFn: () => counterpartyApi.list(1).then(res => res.data),
     enabled: isGenerateDocOpen && step === 2
+  });
+
+  const { data: userResults, isFetching: isSearchingUsers } = useQuery({
+    queryKey: ['user-search', debouncedShareSearch],
+    queryFn: () => authApi.searchUsers(debouncedShareSearch).then(res => res.data),
+    enabled: !!shareDoc && debouncedShareSearch.length > 2,
   });
   
   const [wizardData, setWizardData] = useState({ 
@@ -116,6 +144,14 @@ const DocumentsPage = () => {
     }
   });
 
+  const updateMutation = useMutation({
+    mutationFn: ({ id, content }: { id: number; content: any }) => docApi.update(id, { content }).then(res => res.data),
+    onSuccess: (data) => {
+      setGenerationResult(data);
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+    }
+  });
+
   const approveMutation = useMutation({
     mutationFn: docApi.approve,
     onSuccess: () => {
@@ -123,6 +159,15 @@ const DocumentsPage = () => {
       setIsGenerateDocOpen(false);
       setStep(1);
       setGenerationResult(null);
+    }
+  });
+
+  const assignMutation = useMutation({
+    mutationFn: ({ docId, data }: { docId: number; data: any }) => assignmentApi.assign(docId, data),
+    onSuccess: () => {
+      setShareSearch('');
+      setShareMessage('');
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
     }
   });
 
@@ -169,6 +214,73 @@ const DocumentsPage = () => {
     });
   };
 
+  const updateSection = (index: number, field: 'title' | 'text', value: string) => {
+    setEditedContent((prev: any) => {
+      if (!prev) return prev;
+      const sections = Array.isArray(prev.document_sections) ? [...prev.document_sections] : [];
+      sections[index] = { ...sections[index], [field]: value };
+      return { ...prev, document_sections: sections };
+    });
+  };
+
+  const persistEdits = async () => {
+    if (!generationResult || !editedContent) return generationResult;
+    const hasChanges = JSON.stringify(editedContent) !== JSON.stringify(generationResult.content);
+    if (!hasChanges) return generationResult;
+    return updateMutation.mutateAsync({ id: generationResult.id, content: editedContent });
+  };
+
+  const handleSaveDraft = async () => {
+    try {
+      await persistEdits();
+      setIsGenerateDocOpen(false);
+      setStep(1);
+      setGenerationResult(null);
+    } catch (err) {
+      console.error('Failed to save draft', err);
+    }
+  };
+
+  const handleApprove = async () => {
+    try {
+      await persistEdits();
+      if (generationResult?.id) {
+        approveMutation.mutate(generationResult.id);
+      }
+    } catch (err) {
+      console.error('Failed to approve', err);
+    }
+  };
+
+  const shareLink = shareDoc?.public_id
+    ? `${window.location.origin}/public/documents/${shareDoc.public_id}`
+    : '';
+
+  const handleCopyLink = async () => {
+    if (!shareLink) return;
+    try {
+      await navigator.clipboard.writeText(shareLink);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 1500);
+    } catch (err) {
+      console.error('Failed to copy link', err);
+    }
+  };
+
+  const handleAssign = (user: any) => {
+    if (!shareDoc) return;
+    const userId = user?.id || user?.ID;
+    if (!userId) return;
+    assignMutation.mutate({
+      docId: shareDoc.id,
+      data: {
+        to_user_id: userId,
+        action: 'SIGN',
+        message: shareMessage || 'Please sign this document with EDS.',
+      }
+    });
+  };
+
   const handleCreateDoc = (e: React.FormEvent) => {
     e.preventDefault();
     if (wizardData.params.counterparty_bin.length !== 12) {
@@ -182,6 +294,8 @@ const DocumentsPage = () => {
     setValidationError(null);
     generateMutation.mutate(wizardData);
   };
+
+  const displayContent = editedContent || generationResult?.content || {};
 
   return (
     <div className="p-12">
@@ -248,6 +362,13 @@ const DocumentsPage = () => {
                   </td>
                   <td className="px-8 py-6 text-right">
                     <div className="flex justify-end gap-2">
+                      <button 
+                        onClick={() => setShareDoc(doc)}
+                        className="p-2 hover:bg-brand-black/5 text-brand-black/40 hover:text-brand-black rounded-lg transition-all"
+                        title="Send for signing"
+                      >
+                        <Send size={20} />
+                      </button>
                       {doc.status === 'DRAFT' && (
                         <button 
                           onClick={() => approveMutation.mutate(doc.id)}
@@ -334,6 +455,8 @@ const DocumentsPage = () => {
                   setIsGenerateDocOpen(false);
                   setStep(1);
                   setGenerationResult(null);
+                  setEditedContent(null);
+                  setPreviewMode('edit');
                 }}
                 className="absolute top-8 right-8 text-brand-black/20 hover:text-brand-black transition-colors"
               >
@@ -673,67 +796,140 @@ const DocumentsPage = () => {
 
               {step === 3 && generationResult && (
                 <div className="space-y-6">
-                  <div className="max-h-[500px] overflow-y-auto space-y-8 pr-4 custom-scrollbar">
-                    {generationResult.content?.document_sections?.map((s: any, i: number) => (
-                      <div key={i} className="prose prose-sm max-w-none">
-                        <h3 className="text-xl font-black text-brand-black mb-4 pb-2 border-b border-brand-black/5">{s.title}</h3>
-                        <ReactMarkdown 
-                          remarkPlugins={[remarkGfm]}
-                          components={{
-                            p: ({children}) => <p className="text-brand-black/70 mb-4 leading-relaxed font-medium">{children}</p>,
-                            ul: ({children}) => <ul className="list-disc pl-6 mb-4 space-y-2 text-brand-black/70 font-medium">{children}</ul>,
-                            ol: ({children}) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-brand-black/70 font-medium">{children}</ol>,
-                            li: ({children}) => <li>{children}</li>,
-                            strong: ({children}) => <strong className="font-black text-brand-black">{children}</strong>,
-                          }}
-                        >
-                          {s.text}
-                        </ReactMarkdown>
-                      </div>
-                    ))}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode('edit')}
+                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
+                          previewMode === 'edit' ? 'bg-brand-black text-white shadow-lg' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'
+                        }`}
+                      >
+                        <PencilLine size={14} /> Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPreviewMode('preview')}
+                        className={`px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest transition-all flex items-center gap-2 ${
+                          previewMode === 'preview' ? 'bg-brand-black text-white shadow-lg' : 'bg-brand-eggshell text-brand-black/40 hover:bg-brand-black/5'
+                        }`}
+                      >
+                        <Eye size={14} /> Preview
+                      </button>
+                    </div>
+                    {updateMutation.isPending && (
+                      <span className="text-xs font-black uppercase tracking-widest text-brand-black/40">Saving changes...</span>
+                    )}
                   </div>
 
-                  {generationResult.content?.open_questions?.length > 0 && (
-                    <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
-                      <h5 className="text-xs font-black uppercase text-blue-500 mb-2">Missing Information</h5>
-                      <ul className="space-y-1">
-                        {generationResult.content.open_questions.map((q: any, i: number) => (
-                          <li key={i} className="text-xs font-bold text-blue-600/80 flex items-start gap-2">
-                            <span className="text-blue-500">?</span> {q}
-                          </li>
-                        ))}
-                      </ul>
+                  <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6">
+                    <div className="max-h-[500px] overflow-y-auto space-y-6 pr-4 custom-scrollbar">
+                      {previewMode === 'edit' ? (
+                        Array.isArray(displayContent.document_sections) && displayContent.document_sections.length > 0 ? (
+                          displayContent.document_sections.map((s: any, i: number) => (
+                            <div key={i} className="bg-brand-eggshell/60 rounded-2xl border border-brand-black/5 p-4 space-y-3">
+                              <div className="flex items-center justify-between gap-4">
+                                <input
+                                  type="text"
+                                  value={s.title || ''}
+                                  onChange={(e) => updateSection(i, 'title', e.target.value)}
+                                  className="w-full bg-white/80 border-2 border-transparent rounded-xl py-2 px-3 focus:border-brand-aquamarine focus:outline-none transition-all font-black text-brand-black"
+                                  placeholder="Section title"
+                                />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-brand-black/40">#{i + 1}</span>
+                              </div>
+                              <textarea
+                                value={s.text || ''}
+                                onChange={(e) => updateSection(i, 'text', e.target.value)}
+                                className="w-full bg-white/80 border-2 border-transparent rounded-xl py-3 px-3 focus:border-brand-aquamarine focus:outline-none transition-all font-bold text-sm text-brand-black/80 min-h-[140px]"
+                                placeholder="Section text"
+                              />
+                              {s.citations?.length > 0 && (
+                                <div className="text-[10px] font-black uppercase tracking-widest text-brand-black/40">
+                                  Citations: {s.citations.join(', ')}
+                                </div>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-6 bg-brand-eggshell/60 rounded-2xl text-sm font-bold text-brand-black/40 text-center">
+                            No sections generated yet.
+                          </div>
+                        )
+                      ) : (
+                        Array.isArray(displayContent.document_sections) && displayContent.document_sections.length > 0 ? (
+                          displayContent.document_sections.map((s: any, i: number) => (
+                            <div key={i} className="prose prose-sm max-w-none">
+                              <h3 className="text-xl font-black text-brand-black mb-4 pb-2 border-b border-brand-black/5">{s.title}</h3>
+                              <ReactMarkdown 
+                                remarkPlugins={[remarkGfm]}
+                                components={{
+                                  p: ({children}) => <p className="text-brand-black/70 mb-4 leading-relaxed font-medium">{children}</p>,
+                                  ul: ({children}) => <ul className="list-disc pl-6 mb-4 space-y-2 text-brand-black/70 font-medium">{children}</ul>,
+                                  ol: ({children}) => <ol className="list-decimal pl-6 mb-4 space-y-2 text-brand-black/70 font-medium">{children}</ol>,
+                                  li: ({children}) => <li>{children}</li>,
+                                  strong: ({children}) => <strong className="font-black text-brand-black">{children}</strong>,
+                                }}
+                              >
+                                {s.text}
+                              </ReactMarkdown>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="p-6 bg-brand-eggshell/60 rounded-2xl text-sm font-bold text-brand-black/40 text-center">
+                            No sections generated yet.
+                          </div>
+                        )
+                      )}
                     </div>
-                  )}
-                  
-                  {generationResult.content?.risk_flags?.length > 0 && (
-                    <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
-                      <h5 className="text-xs font-black uppercase text-red-500 mb-2">AI Risk Analysis</h5>
-                      <ul className="space-y-1">
-                        {generationResult.content.risk_flags.map((r: any, i: number) => (
-                          <li key={i} className="text-xs font-bold text-red-600/80 flex items-start gap-2">
-                            <span className="text-red-500">•</span> {r.message}
-                          </li>
-                        ))}
-                      </ul>
+
+                    <div className="space-y-4">
+                      <div className="p-4 bg-brand-eggshell/50 rounded-2xl border border-brand-black/5">
+                        <h5 className="text-[10px] font-black uppercase tracking-widest text-brand-black/40 mb-2">Document Meta</h5>
+                        <div className="text-xs font-bold text-brand-black/60">Document ID: {generationResult.id}</div>
+                        <div className="text-xs font-bold text-brand-black/60">Status: {generationResult.status}</div>
+                      </div>
+
+                      {displayContent.open_questions?.length > 0 && (
+                        <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                          <h5 className="text-xs font-black uppercase text-blue-500 mb-2">Missing Information</h5>
+                          <ul className="space-y-1">
+                            {displayContent.open_questions.map((q: any, i: number) => (
+                              <li key={i} className="text-xs font-bold text-blue-600/80 flex items-start gap-2">
+                                <span className="text-blue-500">?</span> {q}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      
+                      {displayContent.risk_flags?.length > 0 && (
+                        <div className="p-4 bg-red-50 rounded-2xl border border-red-100">
+                          <h5 className="text-xs font-black uppercase text-red-500 mb-2">AI Risk Analysis</h5>
+                          <ul className="space-y-1">
+                            {displayContent.risk_flags.map((r: any, i: number) => (
+                              <li key={i} className="text-xs font-bold text-red-600/80 flex items-start gap-2">
+                                <span className="text-red-500">•</span> {r.message}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
 
                   <div className="flex gap-4">
                     <button 
-                      onClick={() => {
-                        setIsGenerateDocOpen(false);
-                        setStep(1);
-                        setGenerationResult(null);
-                      }}
-                      className="flex-1 bg-brand-eggshell text-brand-black py-4 rounded-2xl font-black hover:bg-brand-black/5 transition-all"
+                      onClick={handleSaveDraft}
+                      disabled={updateMutation.isPending}
+                      className="flex-1 bg-brand-eggshell text-brand-black py-4 rounded-2xl font-black hover:bg-brand-black/5 transition-all disabled:opacity-60"
                     >
                       Save as Draft
                     </button>
                     <button 
-                      onClick={() => approveMutation.mutate(generationResult.id)}
-                      disabled={approveMutation.isPending}
-                      className="flex-1 bg-brand-aquamarine text-brand-black py-4 rounded-2xl font-black hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                      onClick={handleApprove}
+                      disabled={approveMutation.isPending || updateMutation.isPending}
+                      className="flex-1 bg-brand-aquamarine text-brand-black py-4 rounded-2xl font-black hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-60"
                     >
                       {approveMutation.isPending ? <Loader2 className="animate-spin" /> : (
                         <>
@@ -745,6 +941,115 @@ const DocumentsPage = () => {
                   </div>
                 </div>
               )}
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {shareDoc && (
+          <div className="fixed inset-0 bg-brand-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-6">
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-white rounded-[40px] p-10 max-w-4xl w-full shadow-2xl relative"
+            >
+              <button 
+                onClick={() => {
+                  setShareDoc(null);
+                  setShareSearch('');
+                  setShareMessage('');
+                  setLinkCopied(false);
+                }}
+                className="absolute top-8 right-8 text-brand-black/20 hover:text-brand-black transition-colors"
+              >
+                <Plus size={32} className="rotate-45" />
+              </button>
+
+              <h2 className="text-3xl font-black text-brand-black mb-2">Send for Signing</h2>
+              <p className="text-brand-black/40 font-medium mb-8">Invite a teammate or share a signing link.</p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_280px] gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-brand-black/40">
+                    <UserPlus size={18} />
+                    <h4 className="text-xs font-black uppercase tracking-widest">Send to User</h4>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={shareSearch}
+                    onChange={(e) => setShareSearch(e.target.value)}
+                    placeholder="Search by email or phone"
+                    className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold"
+                  />
+
+                  <textarea
+                    value={shareMessage}
+                    onChange={(e) => setShareMessage(e.target.value)}
+                    placeholder="Message to signer (optional)"
+                    className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-3 px-4 focus:border-brand-aquamarine focus:outline-none transition-all font-bold min-h-[100px]"
+                  />
+
+                  <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2">
+                    {isSearchingUsers && (
+                      <div className="flex items-center gap-2 text-xs font-bold text-brand-black/40">
+                        <Loader2 size={14} className="animate-spin" /> Searching...
+                      </div>
+                    )}
+                    {Array.isArray(userResults) && userResults.length > 0 && userResults.map((user: any) => {
+                      const displayLabel = user.email || user.Email || user.phone || user.Phone || user.id || user.ID;
+                      const roleLabel = user.role_name || user.RoleName || 'User';
+                      return (
+                        <div key={user.id || user.ID} className="flex items-center justify-between gap-3 p-3 rounded-2xl border border-brand-black/5 bg-brand-eggshell/40">
+                          <div>
+                            <div className="text-sm font-black text-brand-black">{displayLabel}</div>
+                            <div className="text-[10px] font-black uppercase tracking-widest text-brand-black/40">{roleLabel}</div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleAssign(user)}
+                            disabled={assignMutation.isPending}
+                            className="bg-brand-black text-brand-eggshell px-3 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:brightness-125 transition-all disabled:opacity-50"
+                          >
+                            Send
+                          </button>
+                        </div>
+                      );
+                    })}
+                    {debouncedShareSearch.length > 2 && !isSearchingUsers && (!userResults || userResults.length === 0) && (
+                      <div className="text-xs font-bold text-brand-black/40">No users found.</div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-brand-black/40">
+                    <Link2 size={18} />
+                    <h4 className="text-xs font-black uppercase tracking-widest">Share Link</h4>
+                  </div>
+
+                  <div className="p-4 bg-brand-eggshell/60 rounded-2xl border border-brand-black/5 space-y-3">
+                    <div className="text-xs font-bold text-brand-black/70 break-all">{shareLink || 'Link unavailable yet.'}</div>
+                    <button
+                      type="button"
+                      onClick={handleCopyLink}
+                      disabled={!shareLink}
+                      className="w-full bg-brand-aquamarine text-brand-black py-3 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:shadow-lg transition-all disabled:opacity-50"
+                    >
+                      <Copy size={14} />
+                      {linkCopied ? 'Copied' : 'Copy Link'}
+                    </button>
+                  </div>
+
+                  <div className="p-4 bg-brand-aquamarine/10 rounded-2xl border border-brand-aquamarine/30">
+                    <div className="text-xs font-bold text-brand-black/60">
+                      This link opens the public verification page used by QR codes in exports.
+                    </div>
+                  </div>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

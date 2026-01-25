@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Mail, 
-  Lock, 
+import {
+  Mail,
+  Lock,
   Phone,
   Scale,
   User,
-  ChevronRight, 
+  ChevronRight,
   ArrowLeft,
   Loader2,
   CheckCircle,
@@ -41,7 +41,7 @@ const RegisterPage = () => {
       icon: User,
     },
     {
-      id: 'legal',
+      id: 'free_lawyer',
       title: 'Свободный юрист',
       description: 'Проверяет, комментирует и согласует документы.',
       icon: Scale,
@@ -84,7 +84,7 @@ const RegisterPage = () => {
   return (
     <div className="min-h-screen bg-brand-eggshell flex flex-col md:flex-row font-sans pt-20">
       {/* Left Side: Branding & Info */}
-      <motion.div 
+      <motion.div
         initial={{ x: -100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         className="hidden md:flex flex-[1.5] bg-white p-12 flex-col justify-between border-r border-brand-black/5"
@@ -117,7 +117,7 @@ const RegisterPage = () => {
       </motion.div>
 
       {/* Right Side: Form */}
-      <motion.div 
+      <motion.div
         initial={{ x: 100, opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         className="flex-1 p-8 md:p-24 flex flex-col justify-center bg-brand-eggshell/20"
@@ -125,7 +125,7 @@ const RegisterPage = () => {
         <div className="max-w-md mx-auto w-full space-y-12">
           <AnimatePresence mode="wait">
             {!isRegistered ? (
-              <motion.div 
+              <motion.div
                 key="register-form"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -159,19 +159,17 @@ const RegisterPage = () => {
                             role="radio"
                             aria-checked={isActive}
                             onClick={() => setRole(option.id)}
-                            className={`w-full rounded-2xl border-2 p-4 text-left transition-all ${
-                              isActive
+                            className={`w-full rounded-2xl border-2 p-4 text-left transition-all ${isActive
                                 ? 'border-brand-aquamarine bg-white shadow-xl shadow-brand-aquamarine/10'
                                 : 'border-brand-black/10 bg-white/50 hover:border-brand-black/20 hover:bg-white'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-start gap-4">
                               <div
-                                className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-colors ${
-                                  isActive
+                                className={`flex h-12 w-12 items-center justify-center rounded-2xl transition-colors ${isActive
                                     ? 'bg-brand-aquamarine text-brand-black'
                                     : 'bg-brand-black/5 text-brand-black/60'
-                                }`}
+                                  }`}
                               >
                                 <Icon size={22} />
                               </div>
@@ -179,9 +177,8 @@ const RegisterPage = () => {
                                 <div className="flex items-center justify-between gap-3">
                                   <span className="text-base font-black text-brand-black">{option.title}</span>
                                   <span
-                                    className={`text-[10px] font-black uppercase tracking-[0.2em] ${
-                                      isActive ? 'text-brand-black' : 'text-brand-black/40'
-                                    }`}
+                                    className={`text-[10px] font-black uppercase tracking-[0.2em] ${isActive ? 'text-brand-black' : 'text-brand-black/40'
+                                      }`}
                                   >
                                     {isActive ? 'Выбрано' : 'Выбрать'}
                                   </span>
@@ -199,8 +196,8 @@ const RegisterPage = () => {
                     <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Email Address</label>
                     <div className="relative group">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={20} />
-                      <input 
-                        type="email" 
+                      <input
+                        type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="name@company.kz"
@@ -214,8 +211,8 @@ const RegisterPage = () => {
                     <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Phone Number</label>
                     <div className="relative group">
                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={20} />
-                      <input 
-                        type="tel" 
+                      <input
+                        type="tel"
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+7 (7XX) XXX-XX-XX"
@@ -229,8 +226,8 @@ const RegisterPage = () => {
                     <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Password</label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={20} />
-                      <input 
-                        type="password" 
+                      <input
+                        type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
@@ -240,7 +237,7 @@ const RegisterPage = () => {
                     </div>
                   </div>
 
-                  <button 
+                  <button
                     type="submit"
                     disabled={registerMutation.isPending}
                     className="w-full bg-brand-black text-brand-eggshell py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -263,7 +260,7 @@ const RegisterPage = () => {
                 </p>
               </motion.div>
             ) : (
-              <motion.div 
+              <motion.div
                 key="verify-form"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -284,8 +281,8 @@ const RegisterPage = () => {
                 <form className="space-y-6" onSubmit={handleVerify}>
                   <div className="space-y-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Verification Code</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       value={verificationCode}
                       onChange={(e) => setVerificationCode(e.target.value)}
                       placeholder="123456"
@@ -295,7 +292,7 @@ const RegisterPage = () => {
                     />
                   </div>
 
-                  <button 
+                  <button
                     type="submit"
                     disabled={verifyMutation.isPending}
                     className="w-full bg-brand-black text-brand-eggshell py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
@@ -313,7 +310,7 @@ const RegisterPage = () => {
                   </button>
                 </form>
 
-                <button 
+                <button
                   onClick={() => setIsRegistered(false)}
                   className="w-full text-brand-black/40 font-bold hover:text-brand-black transition-colors"
                 >
