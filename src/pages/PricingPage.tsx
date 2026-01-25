@@ -11,31 +11,31 @@ const PricingPage = () => {
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-24 space-y-6"
         >
-          <h1 className="text-7xl font-black italic">Transparent Pricing.</h1>
+          <h1 className="text-7xl font-black italic">Прозрачные тарифы.</h1>
           <p className="text-xl text-brand-black/60 font-medium max-w-xl mx-auto">
-            Choose the plan that fits your organization's document volume and legal complexity.
+            Выберите план под объем документов и уровень юридической сложности.
           </p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-8">
           <PricingCard 
-            tier="Starter"
+            tier="Старт"
             price="0"
-            description="Perfect for small businesses starting their digital transformation."
-            features={['5 AI Generations/mo', 'Single Entity', 'Basic Clause Library', 'Standard E-Sign']}
+            description="Подходит для малого бизнеса на старте цифровизации."
+            features={['5 генераций ИИ/мес', '1 юрлицо', 'Базовая библиотека', 'Стандартная ЭЦП']}
           />
           <PricingCard 
-            tier="Professional"
+            tier="Профи"
             price="49"
-            description="Advanced tools for growing companies with high document volume."
-            features={['50 AI Generations/mo', '3 Legal Entities', 'Advanced RAG Grounding', 'Batch EWS Signing', 'Priority Support']}
+            description="Продвинутые инструменты для растущих компаний."
+            features={['50 генераций ИИ/мес', '3 юрлица', 'Улучшенный RAG', 'Пакетное подписание', 'Приоритетная поддержка']}
             highlighted
           />
           <PricingCard 
-            tier="Enterprise"
+            tier="Корпоративный"
             price="Custom"
-            description="Full-scale automation for large organizations and law firms."
-            features={['Unlimited Generations', 'Unlimited Entities', 'Custom AI Training', 'API Access', 'Dedicated Account Manager']}
+            description="Полная автоматизация для крупных организаций и юрфирм."
+            features={['Безлимитные генерации', 'Безлимитные юрлица', 'Обучение ИИ', 'Доступ к API', 'Персональный менеджер']}
           />
         </div>
       </section>
@@ -52,8 +52,8 @@ const PricingCard = ({ tier, price, description, features, highlighted }: any) =
     <div className="mb-8">
       <h3 className={`text-2xl font-black mb-2 ${highlighted ? 'text-brand-aquamarine' : 'text-brand-black'}`}>{tier}</h3>
       <div className="flex items-baseline gap-1 mb-4">
-        <span className="text-5xl font-black">${price}</span>
-        {price !== 'Custom' && <span className={`text-sm font-bold ${highlighted ? 'text-white/40' : 'text-brand-black/40'}`}>/month</span>}
+        <span className="text-5xl font-black">{price === 'Custom' ? 'Индивидуально' : `$${price}`}</span>
+        {price !== 'Custom' && <span className={`text-sm font-bold ${highlighted ? 'text-white/40' : 'text-brand-black/40'}`}>/месяц</span>}
       </div>
       <p className={`text-sm font-medium ${highlighted ? 'text-white/60' : 'text-brand-black/50'}`}>{description}</p>
     </div>
@@ -68,7 +68,7 @@ const PricingCard = ({ tier, price, description, features, highlighted }: any) =
     </div>
 
     <button className={`w-full py-5 rounded-2xl font-black text-lg transition-all ${highlighted ? 'bg-brand-aquamarine text-brand-black hover:brightness-110' : 'bg-brand-black text-white hover:bg-brand-gold'}`}>
-      Get Started
+      Начать
     </button>
   </motion.div>
 );

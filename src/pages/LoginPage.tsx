@@ -39,7 +39,7 @@ const LoginPage = () => {
       navigate({ to: '/dashboard' }); // Redirect to dashboard
     },
     onError: (err: any) => {
-      const msg = err.response?.data?.error || 'Failed to login. Please check your credentials.';
+      const msg = err.response?.data?.error || 'Не удалось войти. Проверьте данные.';
       setError(msg);
       if (msg.includes('email not verified')) {
         setIsVerifying(true);
@@ -56,7 +56,7 @@ const LoginPage = () => {
       loginMutation.mutate({ email, password });
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Invalid verification code.');
+      setError(err.response?.data?.error || 'Неверный код подтверждения.');
     }
   });
 
@@ -89,7 +89,7 @@ const LoginPage = () => {
       >
         <Link to="/" className="flex items-center gap-2 group">
           <ArrowLeft className="text-brand-gold group-hover:-translate-x-1 transition-transform" />
-          <span className="text-brand-black/60 font-black uppercase text-xs tracking-widest">Back to Home</span>
+          <span className="text-brand-black/60 font-black uppercase text-xs tracking-widest">На главную</span>
         </Link>
 
         <div className="space-y-8">
@@ -97,16 +97,16 @@ const LoginPage = () => {
             <span className="text-brand-black font-black text-4xl">Q</span>
           </div>
           <h1 className="text-7xl font-black text-brand-black leading-[1.1]">
-            Experience <br />
-            <span className="text-brand-gold italic">Legal Flow.</span>
+            Включайтесь <br />
+            <span className="text-brand-gold italic">в Legal Flow.</span>
           </h1>
           <p className="text-brand-black/40 text-xl max-w-md font-medium">
-            Access your intelligent document workspace and automated legal workflows.
+            Доступ к интеллектуальным документам и автоматизированным юридическим процессам.
           </p>
         </div>
 
         <div className="bg-brand-eggshell p-8 rounded-[32px] border border-brand-black/5 shadow-inner">
-          <p className="text-brand-gold font-black text-[10px] mb-4 uppercase tracking-[0.2em]">Live Workspace Status</p>
+          <p className="text-brand-gold font-black text-[10px] mb-4 uppercase tracking-[0.2em]">Статус рабочего пространства</p>
           <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
               {[1, 2, 3, 4].map(i => (
@@ -115,7 +115,7 @@ const LoginPage = () => {
                 </div>
               ))}
             </div>
-            <span className="text-brand-black/60 text-sm font-bold">42 Companies generation docs...</span>
+            <span className="text-brand-black/60 text-sm font-bold">42 компании генерируют документы...</span>
           </div>
         </div>
       </motion.div>
@@ -137,8 +137,8 @@ const LoginPage = () => {
                 className="space-y-12"
               >
                 <div className="space-y-2 text-center md:text-left">
-                  <h2 className="text-4xl font-black italic text-brand-black">Welcome Back.</h2>
-                  <p className="text-brand-black/50 font-medium">Please enter your details to login.</p>
+                  <h2 className="text-4xl font-black italic text-brand-black">С возвращением.</h2>
+                  <p className="text-brand-black/50 font-medium">Введите данные для входа.</p>
                 </div>
 
                 {error && (
@@ -154,7 +154,7 @@ const LoginPage = () => {
 
                 <form className="space-y-6" onSubmit={handleLogin}>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Email Address</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Электронная почта</label>
                     <div className="relative group">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={20} />
                       <input 
@@ -169,7 +169,7 @@ const LoginPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Password</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Пароль</label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={20} />
                       <input 
@@ -191,11 +191,11 @@ const LoginPage = () => {
                     {loginMutation.isPending ? (
                       <>
                         <Loader2 className="animate-spin" size={20} />
-                        Authenticating...
+                        Проверка...
                       </>
                     ) : (
                       <>
-                        Login to Dashboard <ChevronRight size={20} />
+                        Войти в кабинет <ChevronRight size={20} />
                       </>
                     )}
                   </button>
@@ -210,8 +210,8 @@ const LoginPage = () => {
                 className="space-y-12"
               >
                 <div className="space-y-2 text-center md:text-left">
-                  <h2 className="text-4xl font-black italic text-brand-black">Verify Email.</h2>
-                  <p className="text-brand-black/50 font-medium">Please enter the code sent to {email}.</p>
+                  <h2 className="text-4xl font-black italic text-brand-black">Подтверждение email.</h2>
+                  <p className="text-brand-black/50 font-medium">Введите код, отправленный на {email}.</p>
                 </div>
 
                 {error && (
@@ -223,7 +223,7 @@ const LoginPage = () => {
 
                 <form className="space-y-6" onSubmit={handleVerify}>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Verification Code</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Код подтверждения</label>
                     <input 
                       type="text" 
                       value={verificationCode}
@@ -240,7 +240,7 @@ const LoginPage = () => {
                     disabled={verifyMutation.isPending}
                     className="w-full bg-brand-black text-brand-eggshell py-4 rounded-xl font-black text-lg flex items-center justify-center gap-2 hover:brightness-125 transition-all shadow-lg active:scale-[0.98] disabled:opacity-50"
                   >
-                    {verifyMutation.isPending ? <Loader2 className="animate-spin" /> : 'Verify & Login'}
+                    {verifyMutation.isPending ? <Loader2 className="animate-spin" /> : 'Подтвердить и войти'}
                   </button>
                 </form>
 
@@ -248,7 +248,7 @@ const LoginPage = () => {
                   onClick={() => setIsVerifying(false)}
                   className="w-full text-brand-black/40 font-bold hover:text-brand-black transition-colors"
                 >
-                  Back to login
+                  Назад ко входу
                 </button>
               </motion.div>
             )}
@@ -259,7 +259,7 @@ const LoginPage = () => {
             <div className="flex items-center justify-between">
               <h3 className="font-bold flex items-center gap-2">
                 <LinkIcon size={18} className="text-brand-gold" />
-                NCA Layer Connection
+                Подключение NCALayer
               </h3>
               <button 
                 onClick={checkNCALayer}
@@ -277,7 +277,7 @@ const LoginPage = () => {
                   initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                   className="p-4 bg-white rounded-xl border-2 border-dashed border-brand-black/10 text-center"
                 >
-                  <p className="text-sm text-brand-black/40">Check connection for digital signature support</p>
+                  <p className="text-sm text-brand-black/40">Проверьте подключение для работы с ЭЦП</p>
                 </motion.div>
               )}
 
@@ -290,7 +290,7 @@ const LoginPage = () => {
                   <div className="w-2 h-2 bg-brand-aquamarine rounded-full animate-bounce" />
                   <div className="w-2 h-2 bg-brand-aquamarine rounded-full animate-bounce [animation-delay:0.2s]" />
                   <div className="w-2 h-2 bg-brand-aquamarine rounded-full animate-bounce [animation-delay:0.4s]" />
-                  <span className="text-sm font-bold text-brand-aquamarine italic">Detecting NCA Layer...</span>
+                  <span className="text-sm font-bold text-brand-aquamarine italic">Идет поиск NCALayer...</span>
                 </motion.div>
               )}
 
@@ -301,7 +301,7 @@ const LoginPage = () => {
                   className="p-4 bg-brand-aquamarine text-brand-black rounded-xl flex items-center gap-3 font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]"
                 >
                   <CheckCircle size={20} />
-                  <span>NCA Layer Connected (v1.3.0)</span>
+                  <span>NCALayer подключен (v1.3.0)</span>
                 </motion.div>
               )}
 
@@ -313,14 +313,14 @@ const LoginPage = () => {
                   className="p-4 bg-red-100 text-red-600 rounded-xl flex items-center gap-3 font-bold"
                 >
                   <XCircle size={20} />
-                  <span>NCA Layer not detected. Is it running?</span>
+                  <span>NCALayer не найден. Запущен ли сервис?</span>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
 
           <p className="text-center text-brand-black/40 text-sm font-medium">
-            Don't have an account? <Link to="/register" className="text-brand-black border-b-2 border-brand-aquamarine hover:border-brand-gold transition-colors">Sign Up</Link>
+            Нет аккаунта? <Link to="/register" className="text-brand-black border-b-2 border-brand-aquamarine hover:border-brand-gold transition-colors">Зарегистрироваться</Link>
           </p>
         </div>
       </motion.div>

@@ -22,16 +22,16 @@ const Navbar = () => {
       
       <div className="hidden md:flex items-center gap-10">
         <Link to="/products" className="text-sm font-bold text-brand-black/60 hover:text-brand-black transition-colors">
-          Products
+          Продукты
         </Link>
         <Link to="/solutions" className="text-sm font-bold text-brand-black/60 hover:text-brand-black transition-colors">
-          Solutions
+          Решения
         </Link>
         <Link to="/pricing" className="text-sm font-bold text-brand-black/60 hover:text-brand-black transition-colors">
-          Pricing
+          Тарифы
         </Link>
         <Link to="/about" className="text-sm font-bold text-brand-black/60 hover:text-brand-black transition-colors">
-          About
+          О нас
         </Link>
       </div>
 
@@ -42,15 +42,15 @@ const Navbar = () => {
       >
         {isLoggedIn ? (
           <Link to="/dashboard" className="bg-brand-black text-brand-eggshell px-6 py-3 rounded-xl font-black text-sm hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95 shadow-sm">
-            Dashboard
+            Кабинет
           </Link>
         ) : (
           <>
             <Link to="/login" className="text-sm font-bold text-brand-black/60 hover:text-brand-black transition-colors">
-              Login
+              Войти
             </Link>
             <Link to="/register" className="bg-brand-aquamarine text-brand-black px-6 py-3 rounded-xl font-black text-sm hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95 shadow-sm">
-              Try for Free
+              Попробовать бесплатно
             </Link>
           </>
         )}

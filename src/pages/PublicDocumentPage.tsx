@@ -11,6 +11,19 @@ import {
 import { signingApi } from '../lib/api';
 import { ncaLayer } from '../services/ncaLayer';
 
+const formatStatus = (status?: string) => {
+  switch (status) {
+    case 'DRAFT':
+      return 'Черновик';
+    case 'APPROVED':
+      return 'Утвержден';
+    case 'SIGNED':
+      return 'Подписан';
+    default:
+      return status || '';
+  }
+};
+
 const PublicDocumentPage = () => {
   const { publicId } = useParams({ from: '/public/documents/$publicId' });
   const [operation, setOperation] = useState<any>(null);
@@ -106,7 +119,7 @@ const PublicDocumentPage = () => {
                 </div>
                 <div className="p-4 bg-brand-eggshell/60 rounded-2xl border border-brand-black/5">
                   <div className="text-[10px] font-black uppercase tracking-widest text-brand-black/40">Статус</div>
-                  <div className="text-sm font-black text-brand-black">{data.status}</div>
+                  <div className="text-sm font-black text-brand-black">{formatStatus(data.status)}</div>
                 </div>
               </div>
 

@@ -55,7 +55,7 @@ const RegisterPage = () => {
       setError('');
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Failed to register. Please try again.');
+      setError(err.response?.data?.error || 'Не удалось зарегистрироваться. Попробуйте еще раз.');
     }
   });
 
@@ -65,7 +65,7 @@ const RegisterPage = () => {
       navigate({ to: '/login' });
     },
     onError: (err: any) => {
-      setError(err.response?.data?.error || 'Invalid verification code.');
+      setError(err.response?.data?.error || 'Неверный код подтверждения.');
     }
   });
 
@@ -91,7 +91,7 @@ const RegisterPage = () => {
       >
         <Link to="/" className="flex items-center gap-2 group">
           <ArrowLeft className="text-brand-gold group-hover:-translate-x-1 transition-transform" />
-          <span className="text-brand-black/60 font-black uppercase text-xs tracking-widest">Back to Home</span>
+          <span className="text-brand-black/60 font-black uppercase text-xs tracking-widest">На главную</span>
         </Link>
 
         <div className="space-y-8">
@@ -99,19 +99,19 @@ const RegisterPage = () => {
             <span className="text-brand-black font-black text-4xl">Q</span>
           </div>
           <h1 className="text-7xl font-black text-brand-black leading-[1.1]">
-            Join the <br />
-            <span className="text-brand-gold italic">Evolution.</span>
+            Присоединяйтесь <br />
+            <span className="text-brand-gold italic">к эволюции.</span>
           </h1>
           <p className="text-brand-black/40 text-xl max-w-md font-medium">
-            Start automating your legal documents and workflows with intelligent AI.
+            Автоматизируйте юридические документы и процессы с помощью ИИ.
           </p>
         </div>
 
         <div className="bg-brand-eggshell p-8 rounded-[32px] border border-brand-black/5 shadow-inner">
-          <p className="text-brand-gold font-black text-[10px] mb-4 uppercase tracking-[0.2em]">Network Capability</p>
+          <p className="text-brand-gold font-black text-[10px] mb-4 uppercase tracking-[0.2em]">Техническая готовность</p>
           <div className="flex items-center gap-4">
             <CheckCircle className="text-brand-aquamarine" />
-            <span className="text-brand-black/60 text-sm font-bold">Secure NCA Layer Integration Ready</span>
+            <span className="text-brand-black/60 text-sm font-bold">Интеграция с NCALayer готова</span>
           </div>
         </div>
       </motion.div>
@@ -133,8 +133,8 @@ const RegisterPage = () => {
                 className="space-y-12"
               >
                 <div className="space-y-2 text-center md:text-left">
-                  <h2 className="text-4xl font-black italic text-brand-black">Create Account.</h2>
-                  <p className="text-brand-black/50 font-medium">Join 500+ companies using QazDocs.</p>
+                  <h2 className="text-4xl font-black italic text-brand-black">Создать аккаунт.</h2>
+                  <p className="text-brand-black/50 font-medium">Присоединяйтесь к 500+ компаниям с QazDocs.</p>
                 </div>
 
                 {error && (
@@ -193,7 +193,7 @@ const RegisterPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Email Address</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Электронная почта</label>
                     <div className="relative group">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={20} />
                       <input
@@ -208,7 +208,7 @@ const RegisterPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Phone Number</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Телефон</label>
                     <div className="relative group">
                       <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={20} />
                       <input
@@ -223,7 +223,7 @@ const RegisterPage = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Password</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Пароль</label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-black/20 group-focus-within:text-brand-aquamarine transition-colors" size={20} />
                       <input
@@ -245,18 +245,18 @@ const RegisterPage = () => {
                     {registerMutation.isPending ? (
                       <>
                         <Loader2 className="animate-spin" size={20} />
-                        Creating Account...
+                        Создание аккаунта...
                       </>
                     ) : (
                       <>
-                        Get Started <ChevronRight size={20} />
+                        Начать работу <ChevronRight size={20} />
                       </>
                     )}
                   </button>
                 </form>
 
                 <p className="text-center text-brand-black/40 text-sm font-medium">
-                  Already have an account? <Link to="/login" className="text-brand-black border-b-2 border-brand-aquamarine hover:border-brand-gold transition-colors">Login</Link>
+                  Уже есть аккаунт? <Link to="/login" className="text-brand-black border-b-2 border-brand-aquamarine hover:border-brand-gold transition-colors">Войти</Link>
                 </p>
               </motion.div>
             ) : (
@@ -267,8 +267,8 @@ const RegisterPage = () => {
                 className="space-y-12"
               >
                 <div className="space-y-2 text-center md:text-left">
-                  <h2 className="text-4xl font-black italic text-brand-black">Verify Email.</h2>
-                  <p className="text-brand-black/50 font-medium">We've sent a 6-digit code to {email}.</p>
+                  <h2 className="text-4xl font-black italic text-brand-black">Подтвердите email.</h2>
+                  <p className="text-brand-black/50 font-medium">Мы отправили 6-значный код на {email}.</p>
                 </div>
 
                 {error && (
@@ -280,7 +280,7 @@ const RegisterPage = () => {
 
                 <form className="space-y-6" onSubmit={handleVerify}>
                   <div className="space-y-2">
-                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Verification Code</label>
+                    <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Код подтверждения</label>
                     <input
                       type="text"
                       value={verificationCode}
@@ -300,11 +300,11 @@ const RegisterPage = () => {
                     {verifyMutation.isPending ? (
                       <>
                         <Loader2 className="animate-spin" size={20} />
-                        Verifying...
+                        Проверка...
                       </>
                     ) : (
                       <>
-                        Verify & Continue <ChevronRight size={20} />
+                        Подтвердить и продолжить <ChevronRight size={20} />
                       </>
                     )}
                   </button>
@@ -314,7 +314,7 @@ const RegisterPage = () => {
                   onClick={() => setIsRegistered(false)}
                   className="w-full text-brand-black/40 font-bold hover:text-brand-black transition-colors"
                 >
-                  Use a different email
+                  Использовать другой email
                 </button>
               </motion.div>
             )}

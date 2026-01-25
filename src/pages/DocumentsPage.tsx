@@ -40,6 +40,19 @@ const formatPrice = (value: string) => {
   return digits.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 };
 
+const formatDocStatus = (status?: string) => {
+  switch (status) {
+    case 'DRAFT':
+      return 'Черновик';
+    case 'APPROVED':
+      return 'Утвержден';
+    case 'SIGNED':
+      return 'Подписан';
+    default:
+      return status || '';
+  }
+};
+
 const CURRENCIES = [
   { code: 'KZT', symbol: '₸' },
   { code: 'USD', symbol: '$' },
@@ -65,36 +78,8 @@ const DocumentsPage = () => {
   const [shareSearch, setShareSearch] = useState('');
   const [shareMessage, setShareMessage] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
-  const debouncedShareSearch = useDebounce(shareSearch, 300);
-
-  useEffect(() => {
-    if (generationResult?.content) {
-      setEditedContent(generationResult.content);
-      setPreviewMode('edit');
-    } else {
-      setEditedContent(null);
-    }
-  }, [generationResult]);
-
-  // Auto-fill states
-  const { data: profiles } = useQuery({
-    queryKey: ['profiles'],
-    queryFn: () => orgApi.listProfiles(1).then(res => res.data),
-    enabled: isGenerateDocOpen && step === 2
-  });
-
-  const { data: counterparties } = useQuery({
-    queryKey: ['counterparties'],
-    queryFn: () => counterpartyApi.list(1).then(res => res.data),
-    enabled: isGenerateDocOpen && step === 2
-  });
-
-  const { data: userResults, isFetching: isSearchingUsers } = useQuery({
-    queryKey: ['user-search', debouncedShareSearch],
-    queryFn: () => authApi.searchUsers(debouncedShareSearch).then(res => res.data),
-    enabled: !!shareDoc && debouncedShareSearch.length > 2,
-  });
-  
+  const [docsScope, setDocsScope] = useState<'personal' | 'organization'>('personal');
+  const [selectedOrgId, setSelectedOrgId] = useState<number | null>(null);
   const [wizardData, setWizardData] = useState({ 
     organization_id: 1,
     counterparty_id: null as number | null,
@@ -122,16 +107,64 @@ const DocumentsPage = () => {
     },
     additional_conditions: []
   });
+  const debouncedShareSearch = useDebounce(shareSearch, 300);
 
+  useEffect(() => {
+    if (generationResult?.content) {
+      setEditedContent(generationResult.content);
+      setPreviewMode('edit');
+    } else {
+      setEditedContent(null);
+    }
+  }, [generationResult]);
+
+  const { data: orgs } = useQuery({
+    queryKey: ['organizations'],
+    queryFn: () => orgApi.list().then(res => res.data),
+  });
+
+  useEffect(() => {
+    if (!selectedOrgId && Array.isArray(orgs) && orgs.length > 0) {
+      setSelectedOrgId(orgs[0].id);
+    }
+  }, [orgs, selectedOrgId]);
+
+  const wizardOrgId = wizardData.organization_id || selectedOrgId || 1;
+
+  // Auto-fill states
+  const { data: profiles } = useQuery({
+    queryKey: ['profiles', wizardOrgId],
+    queryFn: () => orgApi.listProfiles(wizardOrgId).then(res => res.data),
+    enabled: isGenerateDocOpen && step === 2 && !!wizardOrgId
+  });
+
+  const { data: counterparties } = useQuery({
+    queryKey: ['counterparties', wizardOrgId],
+    queryFn: () => counterpartyApi.list(wizardOrgId).then(res => res.data),
+    enabled: isGenerateDocOpen && step === 2 && !!wizardOrgId
+  });
+
+  const { data: userResults, isFetching: isSearchingUsers } = useQuery({
+    queryKey: ['user-search', debouncedShareSearch],
+    queryFn: () => authApi.searchUsers(debouncedShareSearch).then(res => res.data),
+    enabled: !!shareDoc && debouncedShareSearch.length > 2,
+  });
+  
   const { data: templates } = useQuery({
     queryKey: ['templates'],
     queryFn: () => docApi.listTemplates().then(res => res.data),
     enabled: isGenerateDocOpen,
   });
 
-  const { data: docs, isLoading: isLoadingDocs } = useQuery({
-    queryKey: ['documents'],
-    queryFn: () => docApi.listDocuments(1).then(res => res.data), // Hardcoded orgId for demo
+  const { data: myDocs, isLoading: isLoadingMyDocs } = useQuery({
+    queryKey: ['documents', 'personal'],
+    queryFn: () => docApi.listMyDocuments().then(res => res.data),
+  });
+
+  const { data: orgDocs, isLoading: isLoadingOrgDocs } = useQuery({
+    queryKey: ['documents', 'organization', selectedOrgId],
+    queryFn: () => docApi.listOrganizationDocuments(selectedOrgId as number).then(res => res.data),
+    enabled: docsScope === 'organization' && !!selectedOrgId,
   });
 
   const generateMutation = useMutation({
@@ -296,21 +329,77 @@ const DocumentsPage = () => {
   };
 
   const displayContent = editedContent || generationResult?.content || {};
+  const docs = docsScope === 'personal' ? myDocs : orgDocs;
+  const isLoadingDocs = docsScope === 'personal' ? isLoadingMyDocs : isLoadingOrgDocs;
+  const emptyDocsMessage = docsScope === 'personal'
+    ? 'Личные документы пока не созданы.'
+    : Array.isArray(orgs) && orgs.length === 0
+      ? 'Сначала создайте организацию.'
+      : selectedOrgId
+        ? 'Документы организации пока не созданы.'
+        : 'Выберите организацию для просмотра документов.';
 
   return (
     <div className="p-12">
       <div className="flex justify-between items-center mb-12">
         <div>
-          <h1 className="text-4xl font-black text-brand-black mb-2">Все документы</h1>
+          <h1 className="text-4xl font-black text-brand-black mb-2">Документы</h1>
           <p className="text-brand-black/40 font-bold uppercase tracking-widest text-sm">Управляйте интеллектуальным юридическим пространством.</p>
         </div>
         <button 
-          onClick={() => setIsGenerateDocOpen(true)}
+          onClick={() => {
+            if (docsScope === 'organization' && selectedOrgId) {
+              setWizardData((prev) => ({ ...prev, organization_id: selectedOrgId }));
+            }
+            setIsGenerateDocOpen(true);
+          }}
           className="bg-brand-aquamarine text-brand-black px-8 py-4 rounded-2xl font-black flex items-center gap-2 hover:shadow-xl hover:-translate-y-1 transition-all active:scale-95 shadow-sm"
         >
           <Plus size={20} />
           Создать документ
         </button>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 mb-8">
+        <div className="inline-flex items-center bg-brand-eggshell rounded-2xl p-1 border border-brand-black/5">
+          <button
+            type="button"
+            onClick={() => setDocsScope('personal')}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+              docsScope === 'personal' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:text-brand-black'
+            }`}
+          >
+            Мои документы
+          </button>
+          <button
+            type="button"
+            onClick={() => setDocsScope('organization')}
+            className={`px-5 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all ${
+              docsScope === 'organization' ? 'bg-brand-black text-brand-eggshell shadow-lg' : 'text-brand-black/40 hover:text-brand-black'
+            }`}
+          >
+            Документы организации
+          </button>
+        </div>
+
+        {docsScope === 'organization' && (
+          <div className="flex items-center gap-3">
+            <span className="text-xs font-black uppercase tracking-widest text-brand-black/40">Организация</span>
+            <select
+              value={selectedOrgId ?? ''}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSelectedOrgId(value ? Number(value) : null);
+              }}
+              className="bg-white border border-brand-black/10 rounded-2xl py-3 px-4 font-bold focus:outline-none focus:ring-4 focus:ring-brand-aquamarine/10 focus:border-brand-aquamarine/50 transition-all"
+            >
+              <option value="">Выберите организацию</option>
+              {Array.isArray(orgs) && orgs.map((org: any) => (
+                <option key={org.id} value={org.id}>{org.name}</option>
+              ))}
+            </select>
+          </div>
+        )}
       </div>
 
       <div className="mb-8 relative group">
@@ -354,7 +443,7 @@ const DocumentsPage = () => {
                       doc.status === 'DRAFT' ? 'bg-yellow-100 text-yellow-600' :
                       'bg-blue-100 text-blue-600'
                     }`}>
-                      {doc.status}
+                      {formatDocStatus(doc.status)}
                     </span>
                   </td>
                   <td className="px-8 py-6 text-sm font-medium text-brand-black/60">
@@ -407,7 +496,7 @@ const DocumentsPage = () => {
               <tr>
                 <td colSpan={5} className="px-8 py-20 text-center">
                   <FileText size={48} className="mx-auto text-brand-black/10 mb-4" />
-                  <p className="text-brand-black/40 font-bold">Документы еще не созданы.</p>
+                  <p className="text-brand-black/40 font-bold">{emptyDocsMessage}</p>
                 </td>
               </tr>
             )}
@@ -887,7 +976,7 @@ const DocumentsPage = () => {
                       <div className="p-4 bg-brand-eggshell/50 rounded-2xl border border-brand-black/5">
                         <h5 className="text-[10px] font-black uppercase tracking-widest text-brand-black/40 mb-2">Данные документа</h5>
                         <div className="text-xs font-bold text-brand-black/60">ID документа: {generationResult.id}</div>
-                        <div className="text-xs font-bold text-brand-black/60">Статус: {generationResult.status}</div>
+                        <div className="text-xs font-bold text-brand-black/60">Статус: {formatDocStatus(generationResult.status)}</div>
                       </div>
 
                       {displayContent.open_questions?.length > 0 && (
