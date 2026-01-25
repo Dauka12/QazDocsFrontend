@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_URL ||  'http://78.40.109.172:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
@@ -30,6 +30,7 @@ export const authApi = {
 export const orgApi = {
   create: (data: any) => api.post('/organizations', data),
   list: () => api.get('/organizations/list'),
+  listMy: () => api.get('/organizations/my'),
   get: (id: number) => api.get(`/organizations?id=${id}`),
   createProfile: (data: any) => api.post('/profiles', data),
   listProfiles: (orgId: number) => api.get(`/profiles?organization_id=${orgId}`),

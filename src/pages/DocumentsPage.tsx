@@ -119,8 +119,8 @@ const DocumentsPage = () => {
   }, [generationResult]);
 
   const { data: orgs } = useQuery({
-    queryKey: ['organizations'],
-    queryFn: () => orgApi.list().then(res => res.data),
+    queryKey: ['organizations', 'my'],
+    queryFn: () => orgApi.listMy().then(res => res.data),
   });
 
   useEffect(() => {
