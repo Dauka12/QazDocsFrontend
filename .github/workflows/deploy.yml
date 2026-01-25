@@ -1,0 +1,73 @@
+name: Frontend CI/CD
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract repository name to lowercase
+        id: repo
+        run: echo "NAME=${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ steps.repo.outputs.NAME }}:latest
+          build-args: |
+             VITE_API_URL=/
+
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          password: ${{ secrets.SSH_PASSWORD }}
+          # key: ${{ secrets.SSH_KEY }} # Usage of key commented out in favor of password as per user request context
+          script: |
+            set -e
+            
+            # Login to GHCR on server
+            echo "${{ secrets.GHCR_PAT }}" | docker login ghcr.io -u "${{ secrets.GHCR_USER }}" --password-stdin
+            
+            # Pull the latest image
+            docker pull ghcr.io/${{ steps.repo.outputs.NAME }}:latest
+            
+            # Stop and remove existing container if it exists
+            docker stop qazdocs-frontend || true
+            docker rm qazdocs-frontend || true
+            
+            # Run the new container
+            # Using port 3000 to avoid conflict with potential other services on port 80
+            docker run -d \
+              --name qazdocs-frontend \
+              --restart unless-stopped \
+              -p 3000:80 \
+              --network qazcode_network \
+              ghcr.io/${{ steps.repo.outputs.NAME }}:latest
