@@ -208,12 +208,12 @@ const OrganizationsPage = () => {
                   <label className="text-xs font-bold uppercase tracking-wider text-brand-black/40">Организация</label>
                   <select 
                     value={selectedOrg?.id}
-                    onChange={(e) => setSelectedOrg(orgs.find(org => org.id === e.target.value))}
+                    onChange={(e) => setSelectedOrg(orgs.find((org: any) => org.id === e.target.value))}
                     className="w-full bg-brand-eggshell/50 border-2 border-transparent rounded-2xl py-4 px-6 focus:border-brand-aquamarine focus:bg-white focus:outline-none transition-all"
                     required
                   >
                     <option value="">Выберите организацию</option>
-                    {orgs?.map(org => (
+                    {orgs?.map((org: any) => (
                       <option key={org.id} value={org.id}>{org.name}</option>
                     ))}
                   </select>
