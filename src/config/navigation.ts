@@ -91,7 +91,7 @@ export const NAV_ITEMS: Record<NavItemKey, NavItem> = {
     label: 'My Organization',
     labelRu: 'Моя организация',
     icon: Building2,
-    path: '/dashboard/my-organization',
+    path: '/dashboard/organizations',
   },
   CreateOrganization: {
     key: 'CreateOrganization',
@@ -105,14 +105,14 @@ export const NAV_ITEMS: Record<NavItemKey, NavItem> = {
     label: 'Dashboard',
     labelRu: 'Дашборд',
     icon: LayoutDashboard,
-    path: '/dashboard',
+    path: '/dashboard/organizations',
   },
   DashboardReviewQueue: {
     key: 'DashboardReviewQueue',
     label: 'Review Queue',
     labelRu: 'Очередь проверки',
     icon: LayoutDashboard,
-    path: '/dashboard',
+    path: '/dashboard/organizations',
   },
   Documents: {
     key: 'Documents',
@@ -198,9 +198,9 @@ export const NAV_ITEMS: Record<NavItemKey, NavItem> = {
 // Navigation config per workspace and role
 export const NAV_CONFIG = {
   personal: {
-    user: ['MyDocs', 'OurProfiles', 'MyOrganization'] as NavItemKey[],
-    free_lawyer: ['MyDocs', 'Requests', 'LawyerProfile', 'MyOrganization'] as NavItemKey[],
-    admin: ['MyDocs', 'OurProfiles', 'OrganizationEntry'] as NavItemKey[],  // Admin sees all orgs
+    user: ['MyOrganization', 'MyDocs', 'OurProfiles'] as NavItemKey[],
+    free_lawyer: ['MyOrganization', 'MyDocs', 'Requests', 'LawyerProfile'] as NavItemKey[],
+    admin: ['OrganizationEntry', 'MyDocs', 'OurProfiles'] as NavItemKey[],  // Admin sees all orgs
     external_counterparty: ['MyDocs'] as NavItemKey[],
   },
   organization: {

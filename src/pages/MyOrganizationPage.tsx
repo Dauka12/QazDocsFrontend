@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { orgApi, authApi } from '../lib/api';
 import { useWorkspace } from '../hooks/useWorkspace';
+import CreateOrganizationModal from '../components/CreateOrganizationModal';
 
 interface Employee {
   id: number;
@@ -42,8 +43,9 @@ const roleOptions = [
 const MyOrganizationPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { selectedOrg, organizations, hasOrganization, orgRole, switchToOrg } = useWorkspace();
+  const { selectedOrg, organizations, hasOrganization, orgRole, switchToOrg, refreshUser } = useWorkspace();
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUser, setSelectedUser] = useState<SearchedUser | null>(null);
   const [inviteRole, setInviteRole] = useState('manager');
@@ -72,7 +74,7 @@ const MyOrganizationPage = () => {
               Создайте организацию, чтобы начать работу с документами, добавить сотрудников и контрагентов.
             </p>
             <button
-              onClick={() => navigate({ to: '/dashboard/organizations' })}
+              onClick={() => setShowCreateModal(true)}
               className="bg-brand-black text-brand-eggshell px-8 py-4 rounded-xl font-bold hover:brightness-125 transition-all inline-flex items-center gap-2"
             >
               <Plus size={20} />
@@ -80,6 +82,18 @@ const MyOrganizationPage = () => {
             </button>
           </div>
         </div>
+        <CreateOrganizationModal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={async (org) => {
+            // After successful creation, refresh user data and switch to the new org
+            await refreshUser();
+            if (org?.id) {
+              switchToOrg(org.id);
+            }
+            queryClient.invalidateQueries({ queryKey: ['organizations'] });
+          }}
+        />
       </div>
     );
   }
@@ -377,3 +391,4 @@ const MyOrganizationPage = () => {
 };
 
 export default MyOrganizationPage;
+

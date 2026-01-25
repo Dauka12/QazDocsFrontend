@@ -3,7 +3,8 @@ import {
   RouterProvider,
   createRootRoute,
   createRoute,
-  createRouter
+  createRouter,
+  Navigate
 } from '@tanstack/react-router'
 import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
@@ -107,7 +108,7 @@ const dashboardRoute = createRoute({
 const dashboardIndexRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: '/',
-  component: OrganizationsPage,
+  component: () => <Navigate to="/dashboard/organizations" />,
 })
 
 const organizationsRoute = createRoute({
@@ -155,7 +156,7 @@ const lawyerRequestsRoute = createRoute({
 const myOrganizationRoute = createRoute({
   getParentRoute: () => dashboardRoute,
   path: 'my-organization',
-  component: MyOrganizationPage,
+  component: () => <Navigate to="/dashboard/organizations" />,
 })
 
 // Router instance
