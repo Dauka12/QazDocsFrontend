@@ -20,7 +20,9 @@ export type NavItemKey =
   | 'OurProfiles'
   | 'Requests'
   | 'LawyerProfile'
-  | 'OrganizationEntry'
+  | 'OrganizationEntry'  // Admin only - list all orgs
+  | 'MyOrganization'     // Regular users - their org
+  | 'CreateOrganization' // For users without org
   // Organization items
   | 'Dashboard'
   | 'Documents'
@@ -79,10 +81,24 @@ export const NAV_ITEMS: Record<NavItemKey, NavItem> = {
   },
   OrganizationEntry: {
     key: 'OrganizationEntry',
-    label: 'Organizations',
-    labelRu: 'Организации',
+    label: 'All Organizations',
+    labelRu: 'Все организации',
     icon: Building2,
     path: '/dashboard/organizations',
+  },
+  MyOrganization: {
+    key: 'MyOrganization',
+    label: 'My Organization',
+    labelRu: 'Моя организация',
+    icon: Building2,
+    path: '/dashboard/my-organization',
+  },
+  CreateOrganization: {
+    key: 'CreateOrganization',
+    label: 'Create Organization',
+    labelRu: 'Создать организацию',
+    icon: PlusCircle,
+    path: '/dashboard/organizations/create',
   },
   Dashboard: {
     key: 'Dashboard',
@@ -182,9 +198,9 @@ export const NAV_ITEMS: Record<NavItemKey, NavItem> = {
 // Navigation config per workspace and role
 export const NAV_CONFIG = {
   personal: {
-    user: ['MyDocs', 'OurProfiles', 'OrganizationEntry'] as NavItemKey[],
-    free_lawyer: ['MyDocs', 'Requests', 'LawyerProfile', 'OrganizationEntry'] as NavItemKey[],
-    admin: ['MyDocs', 'OurProfiles', 'OrganizationEntry'] as NavItemKey[],
+    user: ['MyDocs', 'OurProfiles', 'MyOrganization'] as NavItemKey[],
+    free_lawyer: ['MyDocs', 'Requests', 'LawyerProfile', 'MyOrganization'] as NavItemKey[],
+    admin: ['MyDocs', 'OurProfiles', 'OrganizationEntry'] as NavItemKey[],  // Admin sees all orgs
     external_counterparty: ['MyDocs'] as NavItemKey[],
   },
   organization: {
