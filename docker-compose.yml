@@ -3,7 +3,7 @@ services:
     image: ghcr.io/${REPO_NAME}:latest
     container_name: qazdocs-frontend
     ports:
-      - "3000:80"
+      - "3010:80"
     restart: unless-stopped
     networks:
       - qazcode_network
